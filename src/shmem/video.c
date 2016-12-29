@@ -26,11 +26,42 @@
 #include <stdio.h>
 
 #include "platform.h"
+#include "screen.h"
 #include "shmem/video.h"
+#include "shmem/init.h"
+
+static int frame_count=0;
 
 void PLATFORM_DisplayScreen(void)
 {
-	printf("display screen here");
+	unsigned char *src, *dest;
+	int x, y;
+	int x_offset;
+	int x_count;
+
+	printf("display frame #%d (%d-%d, %d-%d)\n", frame_count, Screen_visible_x1, Screen_visible_x2, Screen_visible_y1, Screen_visible_y2);
+	frame_count++;
+
+	/* set up screen copy of middle 336 pixels to shared memory buffer */
+	x = Screen_visible_x2 - Screen_visible_x1;
+	x_count = x;
+	x_offset = (Screen_visible_x2 - x) / 2;
+	y = Screen_visible_y2 - Screen_visible_y1;
+
+	src = (unsigned char *)Screen_atari + x_offset;
+	dest = SHMEM_GetVideoArray();
+	x_offset *= 2;
+
+	/* slow, simple copy */
+	while (y > 0) {
+		x = x_count;
+		while (x > 0) {
+			*dest++ = *src++;
+			x--;
+		}
+		src += x_offset;
+		y--;
+	}
 }
 
 int SHMEM_Video_Initialise(int *argc, char *argv[]) {

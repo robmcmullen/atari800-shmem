@@ -35,7 +35,7 @@ static int have_shared = 0;
 
 unsigned char *shared_memory = NULL;
 
-static unsigned char fake_shared_memory[2048];
+static unsigned char fake_shared_memory[SHMEM_TOTAL_SIZE];
 
 int SHMEM_Initialise(void)
 {
@@ -56,7 +56,7 @@ void SHMEM_Exit(void)
 int SHMEM_AcquireMemory(void)
 {
 	/* get shared memory */
-    memset(fake_shared_memory, 0, 256);
+    memset(fake_shared_memory, 0, SHMEM_TOTAL_SIZE);
     shared_memory = &fake_shared_memory[0];
     return TRUE;
 }
