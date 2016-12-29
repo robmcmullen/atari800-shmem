@@ -45,7 +45,7 @@ void PLATFORM_DisplayScreen(void)
 	/* set up screen copy of middle 336 pixels to shared memory buffer */
 	x = Screen_visible_x2 - Screen_visible_x1;
 	x_count = x;
-	x_offset = (Screen_visible_x2 - x) / 2;
+	x_offset = (Screen_WIDTH - x) / 2;
 	y = Screen_visible_y2 - Screen_visible_y1;
 
 	src = (unsigned char *)Screen_atari + x_offset;
@@ -62,6 +62,30 @@ void PLATFORM_DisplayScreen(void)
 		src += x_offset;
 		y--;
 	}
+
+#ifdef SHMEM_VIDEO_DEBUG
+	/* let emulator stabilize, then print out sample of screen bytes */
+	if (frame_count > 100) {
+		src = SHMEM_GetVideoArray() + (336 * 24);
+		for (y = 0; y < 16; y++) {
+			for (x = 8; x < 140; x++) {
+				/*printf(" %02x", src[x]);*/
+				/* print out text version of screen, assuming graphics 0 memo pad boot screen */
+				unsigned char c = src[x];
+				if (c == 0)
+					printf(" ");
+				else if (c == 0x94)
+					printf(".");
+				else if (c == 0x9a)
+					printf("X");
+				else
+					printf("?");
+			}
+			putchar('\n');
+			src += 336;
+		}
+	}
+#endif
 }
 
 int SHMEM_Video_Initialise(int *argc, char *argv[]) {
