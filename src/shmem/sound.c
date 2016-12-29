@@ -46,7 +46,10 @@ int PLATFORM_SoundSetup(Sound_setup_t *setup)
 	        return FALSE;
 	setup->buffer_frames = hw_buffer_size / setup->sample_size / setup->channels;
 #endif
-	hw_buffer_size = 65536;
+	/* fake the buffer size with known good values so that the actual 
+	calculation of buffer_frames below will produce a reasonable value */
+	hw_buffer_size = 1024 * setup->sample_size / setup->channels;
+	setup->buffer_frames = hw_buffer_size / setup->sample_size / setup->channels;
 
 	return TRUE;
 }
