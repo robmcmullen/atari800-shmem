@@ -34,7 +34,7 @@ void PLATFORM_DisplayScreen(void)
 }
 
 int SHMEM_Video_Initialise(int *argc, char *argv[]) {
-
+	return TRUE;
 }
 
 void SHMEM_Video_Exit(void) {
