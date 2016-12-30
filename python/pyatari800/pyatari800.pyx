@@ -1,5 +1,5 @@
 cdef extern:
-    int main(int, char **)
+    int start_shmem(int, char **)
 
 def start_emulator(source):
     cdef char **argv
@@ -11,4 +11,4 @@ def start_emulator(source):
     fake_args[0] = progname
     argv = fake_args
 
-    main(argc, argv)
+    start_shmem(argc, argv)

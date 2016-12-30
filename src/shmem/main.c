@@ -100,7 +100,7 @@ int PLATFORM_Exit(int run_monitor)
 	return 0;
 }
 
-int main(int argc, char **argv)
+int start_shmem(int argc, char **argv)
 {
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
@@ -114,6 +114,11 @@ int main(int argc, char **argv)
 		if (Atari800_display_screen)
 			PLATFORM_DisplayScreen();
 	}
+}
+
+int main(int argc, char **argv)
+{
+	start_shmem(argc, argv);
 }
 
 /*
