@@ -43,14 +43,24 @@ int SHMEM_Initialise(void)
     if (!have_shared) {
         if (!SHMEM_AcquireMemory())
             return FALSE;
+        have_shared = 1;
         atexit(SHMEM_ReleaseMemory);
     }
-    have_shared = 1;
 	return TRUE;
 }
 
 void SHMEM_Exit(void)
 {
+}
+
+/* use memory that's not managed by the C code */
+int SHMEM_UseMemory(unsigned char *raw, int len) {
+    if (len >= SHMEM_TOTAL_SIZE) {
+        shared_memory = raw;
+        have_shared = 2;
+        return TRUE;
+    }
+    return FALSE;
 }
 
 int SHMEM_AcquireMemory(void)
@@ -63,7 +73,10 @@ int SHMEM_AcquireMemory(void)
 
 void SHMEM_ReleaseMemory(void)
 {
-    /* release shared memory */
+    if (have_shared == 1) {
+        /* release shared memory that was allocated by SHMEM_AcquireMemory */
+        ;
+    }
     return;
 }
 
@@ -76,6 +89,8 @@ unsigned char *SHMEM_GetSoundArray(void) {
 }
 
 unsigned char *SHMEM_GetVideoArray(void) {
+    printf("storage=%lx\n", shared_memory);
+    printf("fake=%lx\n", &fake_shared_memory);
     return &shared_memory[SHMEM_VIDEO_OFFSET];
 }
 

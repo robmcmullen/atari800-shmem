@@ -1,8 +1,11 @@
 from libc.stdlib cimport malloc, free
 from cpython.string cimport PyString_AsString
+import ctypes
+
+ctypedef void (*c_cb_ptr)()
 
 cdef extern:
-    int start_shmem(int, char **)
+    int start_shmem(int, char **, void *, int, c_cb_ptr)
 
 cdef char ** to_cstring_array(list_str):
     cdef char **ret = <char **>malloc(len(list_str) * sizeof(char *))
@@ -10,12 +13,23 @@ cdef char ** to_cstring_array(list_str):
         ret[i] = PyString_AsString(list_str[i])
     return ret
 
-def start_emulator(args):
+pycallback = None
+
+cdef void callback():
+    print "in cython callback"
+    pycallback()
+
+def start_emulator(args, raw=None, size=0, pycb=None):
+    global pycallback
     cdef char *fake_args[10]
     cdef char **argv = fake_args
     cdef int argc
     cdef char *progname="pyatari800"
     cdef char **c_args = to_cstring_array(args)
+    cdef void *c_raw = NULL
+    cdef char *dummy = NULL
+    pycallback = pycb
+    cdef c_cb_ptr c_cb = NULL
 
     argc = 1
     fake_args[0] = progname
@@ -25,6 +39,23 @@ def start_emulator(args):
         fake_args[argc] = arg
         argc += 1
 
-    start_shmem(argc, argv)
+    if pycb is not None:
+        c_cb = &callback
+        print "callback", hex(<long>c_cb)
+
+    save = raw
+    if save is not None:
+        print "CTYPES:", ctypes.byref(save)
+        ref = ctypes.byref(save)
+        print "ref:", ref
+        a = ctypes.cast(ref, ctypes.POINTER(ctypes.c_voidp))
+        print "addr:", a
+        print dir(a)
+        c_raw = <void *>a
+        dummy = <char *>c_raw
+        dummy[0] = 'm';
+        start_shmem(argc, argv, c_raw, size, c_cb)
+    else:
+        start_shmem(argc, argv, NULL, 0, c_cb)
 
     free(c_args)

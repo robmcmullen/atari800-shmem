@@ -100,12 +100,14 @@ int PLATFORM_Exit(int run_monitor)
 	return 0;
 }
 
-int start_shmem(int argc, char **argv)
+int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr cb)
 {
 	int i;
 	for (i = 0; i < argc; i++) {
 		printf("arg #%d: %s\n", i, argv[i]);
 	}
+	printf("raw=%lx, len=%d\n", raw, len);
+	if (raw) SHMEM_UseMemory(raw, len);
 
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
@@ -118,12 +120,16 @@ int start_shmem(int argc, char **argv)
 		Atari800_Frame();
 		if (Atari800_display_screen)
 			PLATFORM_DisplayScreen();
+		if (cb) {
+			printf("callback=%lx\n", cb);
+			(*cb)();
+		}
 	}
 }
 
 int main(int argc, char **argv)
 {
-	start_shmem(argc, argv);
+	start_shmem(argc, argv, NULL, 0, NULL);
 }
 
 /*

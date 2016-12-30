@@ -4,7 +4,7 @@ from setuptools import setup, find_packages, Extension
 if sys.platform.startswith("win"):
     extra_compile_args = ["-DMSVC", "-D_CRT_SECURE_NO_WARNINGS"]
 else:
-    extra_compile_args = []
+    extra_compile_args = ["-g"]
 
 extensions = [
   Extension("pyatari800.pyatari800",
@@ -79,7 +79,7 @@ if "sdist" in sys.argv:
     class sdist(_sdist):
         def run(self):
             from Cython.Build import cythonize
-            cythonize(["pyatari800/pyatari800.pyx"])
+            cythonize(["pyatari800/pyatari800.pyx"], gdb_debug=True)
             _sdist.run(self)
     cmdclass["sdist"] = sdist
 

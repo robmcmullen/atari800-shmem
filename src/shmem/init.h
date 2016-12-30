@@ -15,10 +15,13 @@ extern unsigned char *shared_memory;
 
 int SHMEM_Initialise(void);
 void SHMEM_Exit(void);
+int SHMEM_UseMemory(unsigned char *, int);
 int SHMEM_AcquireMemory(void);
 void SHMEM_ReleaseMemory(void);
 unsigned char *SHMEM_GetInputArray(void);
 unsigned char *SHMEM_GetSoundArray(void);
 unsigned char *SHMEM_GetVideoArray(void);
+
+typedef void (*callback_ptr)();
 
 #endif /* SHMEM_INIT_H_ */
