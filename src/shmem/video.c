@@ -32,6 +32,8 @@
 
 static int frame_count=0;
 
+static int debug_frames = 0;
+
 void PLATFORM_DisplayScreen(void)
 {
 	unsigned char *src, *dest;
@@ -63,7 +65,7 @@ void PLATFORM_DisplayScreen(void)
 		y--;
 	}
 
-#ifdef SHMEM_VIDEO_DEBUG
+	if (debug_frames) {
 	/* let emulator stabilize, then print out sample of screen bytes */
 	if (frame_count > 100) {
 		src = SHMEM_GetVideoArray() + (336 * 24);
@@ -85,10 +87,22 @@ void PLATFORM_DisplayScreen(void)
 			src += 336;
 		}
 	}
-#endif
+	}
 }
 
 int SHMEM_Video_Initialise(int *argc, char *argv[]) {
+	int i, j;
+	int help_only = FALSE;
+
+	for (i = j = 1; i < *argc; i++) {
+		int i_a = (i + 1 < *argc);              /* is argument available? */
+		if (strcmp(argv[i], "-shmem-debug-video") == 0)
+			debug_frames = TRUE;
+		else {
+			argv[j++] = argv[i];
+		}
+	}
+	*argc = j;
 	return TRUE;
 }
 

@@ -102,6 +102,11 @@ int PLATFORM_Exit(int run_monitor)
 
 int start_shmem(int argc, char **argv)
 {
+	int i;
+	for (i = 0; i < argc; i++) {
+		printf("arg #%d: %s\n", i, argv[i]);
+	}
+
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
