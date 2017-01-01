@@ -37,6 +37,9 @@ unsigned char *shared_memory = NULL;
 
 static unsigned char fake_shared_memory[SHMEM_TOTAL_SIZE];
 
+unsigned char *SHMEM_DebugGetFakeMemory(void) {
+    return &fake_shared_memory[0];
+}
 int SHMEM_Initialise(void)
 {
 	/* initialize shared memory here */

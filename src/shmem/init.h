@@ -22,6 +22,7 @@ unsigned char *SHMEM_GetInputArray(void);
 unsigned char *SHMEM_GetSoundArray(void);
 unsigned char *SHMEM_GetVideoArray(void);
 
-typedef void (*callback_ptr)();
+unsigned char *SHMEM_DebugGetFakeMemory(void);
+typedef void (*callback_ptr)(unsigned char *);
 
 #endif /* SHMEM_INIT_H_ */

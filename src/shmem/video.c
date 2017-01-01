@@ -67,26 +67,32 @@ void PLATFORM_DisplayScreen(void)
 
 	if (debug_frames) {
 	/* let emulator stabilize, then print out sample of screen bytes */
-	if (frame_count > 100) {
-		src = SHMEM_GetVideoArray() + (336 * 24);
-		for (y = 0; y < 16; y++) {
-			for (x = 8; x < 140; x++) {
-				/*printf(" %02x", src[x]);*/
-				/* print out text version of screen, assuming graphics 0 memo pad boot screen */
-				unsigned char c = src[x];
-				if (c == 0)
-					printf(" ");
-				else if (c == 0x94)
-					printf(".");
-				else if (c == 0x9a)
-					printf("X");
-				else
-					printf("?");
-			}
-			putchar('\n');
-			src += 336;
+		if (frame_count > 100) {
+			/*SHMEM_DebugVideo(SHMEM_GetVideoArray());*/
 		}
 	}
+}
+
+void SHMEM_DebugVideo(unsigned char *video_mem) {
+	int x, y;
+
+	video_mem += (336 * 24);
+	for (y = 0; y < 16; y++) {
+		for (x = 8; x < 140; x++) {
+			/*printf(" %02x", src[x]);*/
+			/* print out text version of screen, assuming graphics 0 memo pad boot screen */
+			unsigned char c = video_mem[x];
+			if (c == 0)
+				printf(" ");
+			else if (c == 0x94)
+				printf(".");
+			else if (c == 0x9a)
+				printf("X");
+			else
+				printf("?");
+		}
+		putchar('\n');
+		video_mem += 336;
 	}
 }
 

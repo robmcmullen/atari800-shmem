@@ -114,15 +114,25 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 		return 3;
 
 	/* main loop */
+	i = 0;
 	for (;;) {
 		INPUT_key_code = PLATFORM_Keyboard();
 		SHMEM_Mouse();
 		Atari800_Frame();
 		if (Atari800_display_screen)
 			PLATFORM_DisplayScreen();
-		if (cb) {
-			printf("callback=%lx\n", cb);
-			(*cb)();
+		i++;
+		if (i > 100) {
+			if (cb) {
+				unsigned char *fake_shared_memory = SHMEM_DebugGetFakeMemory();
+				printf("fake %lx\n", fake_shared_memory);
+				SHMEM_DebugVideo(fake_shared_memory);
+				printf("shared %lx\n", shared_memory);
+				SHMEM_DebugVideo(shared_memory);
+				//memcpy(shared_memory, fake_shared_memory, SHMEM_TOTAL_SIZE);
+				printf("callback=%lx\n", cb);
+				(*cb)(shared_memory);
+			}
 		}
 	}
 }
