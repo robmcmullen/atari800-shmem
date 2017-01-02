@@ -4,23 +4,17 @@ import ctypes
 
 import pyatari800
 
-def frame(mem):
+def frame(mem, ptr):
     global exchange
     print "got frame", exchange, hex(ctypes.addressof(exchange))
     addr = ctypes.addressof(exchange)
     buf = ctypes.string_at(addr, 100000)
     print "DEBUG: string_at", hex(addr), type(buf)
     debug_video(buf)
+    buf = ctypes.string_at(ptr, 100000)
+    print "DEBUG: ptr", hex(ptr), type(buf)
+    debug_video(buf)
 
-    for i in range(100000):
-        if exchange[i] > 0:
-            print "first:", i
-            break
-    print "fake:", len(mem), type(mem)
-    for i in range(len(mem)):
-        if mem[i] > 0:
-            print "first (fake):", i
-            break
     print "DEBUG: mem", id(mem)
     debug_video(mem)
     print "DEBUG: exchange", hex(ctypes.addressof(exchange))
@@ -29,17 +23,20 @@ def frame(mem):
 def debug_video(mem):
     offset = 336*24
     for y in range(16):
+        print "%x:" % offset,
         for x in range(8,60):
             c = mem[x + offset]
-            print c,
-            # if (c == 0):
-            #     print " ",
-            # elif (c == 0x94):
-            #     print ".",
-            # elif (c == 0x9a):
-            #     print "X",
-            # else:
-            #     print "?",
+            if (c == 0 or c == '\x00'):
+                print " ",
+            elif (c == 0x94 or c == '\x94'):
+                print ".",
+            elif (c == 0x9a or c == '\x9a'):
+                print "X",
+            else:
+                try:
+                    print ord(c),
+                except TypeError:
+                    print repr(c),
         print
         offset += 336;
 

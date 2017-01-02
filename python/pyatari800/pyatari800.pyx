@@ -22,7 +22,7 @@ cdef void callback(unsigned char *mem):
     py_mem = mem[:length]
     print "in cython callback", hex(<long>ptr)
     SHMEM_DebugVideo(mem)
-    pycallback(py_mem)
+    pycallback(py_mem, ptr)
     print "done"
     SHMEM_DebugVideo(mem)
 
