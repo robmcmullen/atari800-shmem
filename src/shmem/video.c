@@ -73,15 +73,15 @@ void PLATFORM_DisplayScreen(void)
 	}
 }
 
-void SHMEM_DebugVideo(unsigned char *video_mem) {
+void SHMEM_DebugVideo(unsigned char *mem) {
 	int x, y;
 
-	video_mem += (336 * 24);
+	mem += (336 * 24) + 640;
 	for (y = 0; y < 16; y++) {
 		for (x = 8; x < 140; x++) {
 			/*printf(" %02x", src[x]);*/
 			/* print out text version of screen, assuming graphics 0 memo pad boot screen */
-			unsigned char c = video_mem[x];
+			unsigned char c = mem[x];
 			if (c == 0)
 				printf(" ");
 			else if (c == 0x94)
@@ -92,7 +92,7 @@ void SHMEM_DebugVideo(unsigned char *video_mem) {
 				printf("?");
 		}
 		putchar('\n');
-		video_mem += 336;
+		mem += 336;
 	}
 }
 

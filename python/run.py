@@ -21,7 +21,7 @@ def frame(mem, ptr):
     debug_video(exchange)
 
 def debug_video(mem):
-    offset = 336*24
+    offset = 336*24 + 640
     for y in range(16):
         print "%x:" % offset,
         for x in range(8,60):
