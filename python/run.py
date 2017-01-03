@@ -48,9 +48,9 @@ args = [
     #"-shmem-debug-video",
 ]
 
-#exchange = RawArray(ctypes.c_ubyte, 100000)
-arraytype = ctypes.c_ubyte * 100000
-exchange = arraytype(0)
+exchange = RawArray(ctypes.c_ubyte, 100000)
+#arraytype = ctypes.c_ubyte * 100000
+#exchange = arraytype(0)
 shared = exchange
 if debug_frames:
     print exchange[0]
