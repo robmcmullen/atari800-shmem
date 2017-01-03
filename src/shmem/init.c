@@ -29,6 +29,9 @@
 #include "atari.h"
 #include "log.h"
 #include "platform.h"
+#ifdef SOUND
+#include "sound.h"
+#endif
 #include "shmem/init.h"
 
 static int have_shared = 0;
@@ -83,13 +86,15 @@ void SHMEM_ReleaseMemory(void)
     return;
 }
 
-unsigned char *SHMEM_GetInputArray(void) {
-    return &shared_memory[SHMEM_INPUT_OFFSET];
+input_template_t *SHMEM_GetInputArray(void) {
+    return (input_template_t *)&shared_memory[SHMEM_INPUT_OFFSET];
 }
 
-unsigned char *SHMEM_GetSoundArray(void) {
-    return &shared_memory[SHMEM_SOUND_OFFSET];
+#ifdef SOUND
+Sound_setup_t *SHMEM_GetSoundArray(void) {
+    return (Sound_setup_t *)&shared_memory[SHMEM_SOUND_OFFSET];
 }
+#endif
 
 unsigned char *SHMEM_GetVideoArray(void) {
     return &shared_memory[SHMEM_VIDEO_OFFSET];

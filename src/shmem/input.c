@@ -37,11 +37,7 @@
 #include "pokey.h"
 #include "ui.h"
 #include "util.h"
-
-/* input array of stuff that's pressed. Based on the akey.h codes for the first
- 256 bytes, and other stuff in the 2nd 256 bytes, including all the strobes,
- the console switches, joysticks, paddles, etc.*/
-unsigned char *input_array = NULL;
+#include "shmem/init.h"
 
 static int lastkey = -1, key_control = 0;
 
@@ -50,21 +46,23 @@ int PLATFORM_Keyboard(void)
 	int shiftctrl = 0;
 	int keycode = 0;
 
-	lastkey = input_array[SHMEM_KEYCHAR];
+	input_template_t *input = SHMEM_GetInputArray();
+
+	lastkey = input->keychar;
 	if (lastkey == 0) {
 		keycode = TRUE;
-		lastkey = input_array[SHMEM_KEYCODE];
+		lastkey = input->keycode;
 	}
 	if (lastkey == 0) {
 		keycode = TRUE;
-		lastkey = -input_array[SHMEM_SPECIAL];
+		lastkey = -input->special;
 	}
 
 	/* SHIFT STATE */
-	INPUT_key_shift = input_array[SHMEM_SHIFT];
+	INPUT_key_shift = input->shift;
 
 	/* CONTROL STATE */
-	key_control = input_array[SHMEM_CONTROL];
+	key_control = input->control;
 
 	/*
 	if (event.type == 2 || event.type == 3) {
@@ -76,11 +74,11 @@ int PLATFORM_Keyboard(void)
 
 	/* OPTION / SELECT / START keys */
 	INPUT_key_consol = INPUT_CONSOL_NONE;
-	if (input_array[SHMEM_OPTION])
+	if (input->option)
 		INPUT_key_consol &= ~INPUT_CONSOL_OPTION;
-	if (input_array[SHMEM_SELECT])
+	if (input->select)
 		INPUT_key_consol &= ~INPUT_CONSOL_SELECT;
-	if (input_array[SHMEM_START])
+	if (input->start)
 		INPUT_key_consol &= ~INPUT_CONSOL_START;
 
 	if (!lastkey) {
@@ -385,13 +383,15 @@ void SHMEM_Mouse(void)
 {
 	int mouse_mode;
 
-	mouse_mode = input_array[SHMEM_MOUSE_MODE];
+	input_template_t *input = SHMEM_GetInputArray();
+
+	mouse_mode = input->mouse_mode;
 
 	if (mouse_mode == SHMEM_FLAG_DIRECT_MOUSE) {
 		int potx, poty;
 
-		potx = input_array[SHMEM_MOUSE_X];
-		poty = input_array[SHMEM_MOUSE_Y];
+		potx = input->mousex;
+		poty = input->mousey;
 		if(potx < 0) potx = 0;
 		if(poty < 0) poty = 0;
 		if(potx > 227) potx = 227;
@@ -400,11 +400,11 @@ void SHMEM_Mouse(void)
 		POKEY_POT_input[(INPUT_mouse_port << 1) + 1] = 227 - poty;
 	}
 	else {
-		INPUT_mouse_delta_x = input_array[SHMEM_MOUSE_X];
-		INPUT_mouse_delta_y = input_array[SHMEM_MOUSE_Y];
+		INPUT_mouse_delta_x = input->mousex;
+		INPUT_mouse_delta_y = input->mousey;
 	}
 
-	INPUT_mouse_buttons = input_array[SHMEM_MOUSE_BUTTONS];
+	INPUT_mouse_buttons = input->mouse_buttons;
 }
 
 int SHMEM_Input_Initialise(int *argc, char *argv[])
@@ -437,9 +437,9 @@ int SHMEM_Input_Initialise(int *argc, char *argv[])
 	if (help_only)
 		return TRUE;
 
-	input_array = SHMEM_GetInputArray();
+	input_template_t *input = SHMEM_GetInputArray();
 
-	if (input_array == NULL) {
+	if (input == NULL) {
 		Log_print("SHMEM_GetInputArray failed");
 		Log_flushlog();
 		return FALSE;
@@ -450,26 +450,30 @@ int SHMEM_Input_Initialise(int *argc, char *argv[])
 
 int PLATFORM_PORT(int num)
 {
+	input_template_t *input = SHMEM_GetInputArray();
+
 	if (num == 0) {
-		return (input_array[SHMEM_JOY_0] + (input_array[SHMEM_JOY_1] << 4)) ^ 0xff;
+		return (input->joy0 + (input->joy1 << 4)) ^ 0xff;
 	}
 	else if (num == 1) {
-		return (input_array[SHMEM_JOY_2] + (input_array[SHMEM_JOY_3] << 4)) ^ 0xff;
+		return (input->joy2 + (input->joy3 << 4)) ^ 0xff;
 	}
 	return 0xff;
 }
 
 int PLATFORM_TRIG(int num)
 {
+	input_template_t *input = SHMEM_GetInputArray();
+
 	switch (num) {
 	case 0:
-		return input_array[SHMEM_TRIG_0] ? 0 : 1;
+		return input->trig0 ? 0 : 1;
 	case 1:
-		return input_array[SHMEM_TRIG_1] ? 0 : 1;
+		return input->trig1 ? 0 : 1;
 	case 2:
-		return input_array[SHMEM_TRIG_2] ? 0 : 1;
+		return input->trig2 ? 0 : 1;
 	case 3:
-		return input_array[SHMEM_TRIG_3] ? 0 : 1;
+		return input->trig3 ? 0 : 1;
 	default:
 		break;
 	}

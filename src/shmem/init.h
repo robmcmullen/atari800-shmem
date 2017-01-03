@@ -1,7 +1,11 @@
 #ifndef SHMEM_INIT_H_
 #define SHMEM_INIT_H_
 
+#include "atari.h"
 #include "screen.h"
+#ifdef SOUND
+#include "sound.h"
+#endif
 
 #define SHMEM_INPUT_OFFSET 0
 #define SHMEM_INPUT_SIZE 128
@@ -13,13 +17,39 @@
 
 extern unsigned char *shared_memory;
 
+typedef struct {
+	UBYTE main_semaphore; /* 0=input ready, 1=screen ready, 0xff=exit emulator */
+	UBYTE keychar;
+	UBYTE keycode;
+	UBYTE special;
+	UBYTE shift;
+	UBYTE control;
+	UBYTE start;
+	UBYTE select;
+	UBYTE option;
+	UBYTE joy0;
+	UBYTE trig0;
+	UBYTE joy1;
+	UBYTE trig1;
+	UBYTE joy2;
+	UBYTE trig2;
+	UBYTE joy3;
+	UBYTE trig3;
+	UBYTE mousex;
+	UBYTE mousey;
+	UBYTE mouse_buttons;
+	UBYTE mouse_mode;
+} input_template_t;
+
 int SHMEM_Initialise(void);
 void SHMEM_Exit(void);
 int SHMEM_UseMemory(unsigned char *, int);
 int SHMEM_AcquireMemory(void);
 void SHMEM_ReleaseMemory(void);
-unsigned char *SHMEM_GetInputArray(void);
-unsigned char *SHMEM_GetSoundArray(void);
+input_template_t *SHMEM_GetInputArray(void);
+#ifdef SOUND
+Sound_setup_t *SHMEM_GetSoundArray(void);
+#endif
 unsigned char *SHMEM_GetVideoArray(void);
 
 unsigned char *SHMEM_DebugGetFakeMemory(void);

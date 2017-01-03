@@ -36,6 +36,7 @@
 #ifdef SOUND
 #include "../sound.h"
 #endif
+#include "util.h"
 #include "videomode.h"
 #include "shmem/init.h"
 #include "shmem/input.h"
@@ -109,24 +110,36 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
 
+	input_template_t *input = SHMEM_GetInputArray();
+
 	/* main loop */
 	i = 0;
 	for (;;) {
+		for (;;) {
+			/* block until input ready */
+			if (input->main_semaphore == 0)
+				break;
+
+			/* or asked to exit */
+			else if (input->main_semaphore == 0xff)
+				return 0;
+			Util_sleep(0.001);
+		}
 		INPUT_key_code = PLATFORM_Keyboard();
 		SHMEM_Mouse();
 		Atari800_Frame();
 		if (Atari800_display_screen)
 			PLATFORM_DisplayScreen();
 		i++;
+		input->main_semaphore = 1; /* screen ready! */
 		if (i > 100) {
 			if (cb) {
 				(*cb)(shared_memory);
 			}
 		}
-		if (*shared_memory == 0xff) {
-			break;
-		}
 	}
+
+	return 0;
 }
 
 int main(int argc, char **argv)

@@ -28,7 +28,7 @@ def frame(mem, ptr):
 
 def debug_video(mem):
     offset = 336*24 + 640
-    for y in range(16):
+    for y in range(32):
         print "%x:" % offset,
         for x in range(8,60):
             c = mem[x + offset]
@@ -69,12 +69,20 @@ def multiprocess():
     exchange = create_exchange()
     p = Process(target=pyatari800.start_emulator, args=(args, exchange, len(exchange)))
     p.start()
-    count = 10
-    while count > 0:
-        time.sleep(.2)
-        print "parent"
+    count = 0
+    while count < 200:
+        while True:
+            # wait for screen to be ready
+            if exchange[0] == 1:
+                break
+            time.sleep(0.001)
+        print "parent", count
         debug_video(exchange)
-        count -= 1
+        if count > 100:
+            exchange[1] = ord('A')
+        # tell emulator that input is ready
+        exchange[0] = 0;
+        count += 1
     exchange[0] = 0xff
     p.join()
 
