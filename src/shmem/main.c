@@ -103,10 +103,6 @@ int PLATFORM_Exit(int run_monitor)
 int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr cb)
 {
 	int i;
-	for (i = 0; i < argc; i++) {
-		printf("arg #%d: %s\n", i, argv[i]);
-	}
-	printf("raw=%lx, len=%d\n", raw, len);
 	if (raw) SHMEM_UseMemory(raw, len);
 
 	/* initialise Atari800 core */
@@ -124,13 +120,6 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 		i++;
 		if (i > 100) {
 			if (cb) {
-				unsigned char *fake_shared_memory = SHMEM_DebugGetFakeMemory();
-				printf("fake %lx\n", fake_shared_memory);
-				SHMEM_DebugVideo(fake_shared_memory);
-				printf("shared %lx\n", shared_memory);
-				SHMEM_DebugVideo(shared_memory);
-				//memcpy(shared_memory, fake_shared_memory, SHMEM_TOTAL_SIZE);
-				printf("callback=%lx\n", cb);
 				(*cb)(shared_memory);
 			}
 		}

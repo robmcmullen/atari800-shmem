@@ -41,7 +41,8 @@ void PLATFORM_DisplayScreen(void)
 	int x_offset;
 	int x_count;
 
-	printf("display frame #%d (%d-%d, %d-%d)\n", frame_count, Screen_visible_x1, Screen_visible_x2, Screen_visible_y1, Screen_visible_y2);
+	if (debug_frames)
+		printf("display frame #%d (%d-%d, %d-%d)\n", frame_count, Screen_visible_x1, Screen_visible_x2, Screen_visible_y1, Screen_visible_y2);
 	frame_count++;
 
 	/* set up screen copy of middle 336 pixels to shared memory buffer */

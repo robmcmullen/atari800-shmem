@@ -92,8 +92,6 @@ unsigned char *SHMEM_GetSoundArray(void) {
 }
 
 unsigned char *SHMEM_GetVideoArray(void) {
-    printf("storage=%lx\n", shared_memory);
-    printf("fake=%lx\n", &fake_shared_memory);
     return &shared_memory[SHMEM_VIDEO_OFFSET];
 }
 
