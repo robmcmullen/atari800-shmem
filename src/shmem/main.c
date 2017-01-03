@@ -123,6 +123,9 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 				(*cb)(shared_memory);
 			}
 		}
+		if (*shared_memory == 0xff) {
+			break;
+		}
 	}
 }
 
