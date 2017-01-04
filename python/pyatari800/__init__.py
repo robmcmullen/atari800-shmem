@@ -35,6 +35,62 @@ def create_exchange():
         print pointer
     return shared
 
+def clamp(val):
+    if val < 0.0:
+        return 0
+    elif val > 255.0:
+        return 255
+    return int(val)
+
+ntsc_iq_lookup = [
+    [  0.000,  0.000 ],
+    [  0.144, -0.189 ],
+    [  0.231, -0.081 ],
+    [  0.243,  0.032 ],
+    [  0.217,  0.121 ],
+    [  0.117,  0.216 ],
+    [  0.021,  0.233 ],
+    [ -0.066,  0.196 ],
+    [ -0.139,  0.134 ],
+    [ -0.182,  0.062 ],
+    [ -0.175, -0.022 ],
+    [ -0.136, -0.100 ],
+    [ -0.069, -0.150 ],
+    [  0.005, -0.159 ],
+    [  0.071, -0.125 ],
+    [  0.124, -0.089 ],
+    ]
+
+def gtia_ntsc_to_rgb_table(val):
+    # This is a better representation of the NTSC colors using a lookup table
+    # rather than the phase calculations. Also from the same thread:
+    # http://atariage.com/forums/topic/107853-need-the-256-colors/page-2#entry1319398
+    cr = (val >> 4) & 15;
+    lm = val & 15;
+
+    y = 255*(lm+1)/16;
+    i = ntsc_iq_lookup[cr][0] * 255
+    q = ntsc_iq_lookup[cr][1] * 255
+
+    r = y + 0.956*i + 0.621*q;
+    g = y - 0.272*i - 0.647*q;
+    b = y - 1.107*i + 1.704*q;
+
+    return clamp(r), clamp(g), clamp(b)
+
+def ntsc_color_map():
+    rmap = np.empty(256, dtype=np.uint8)
+    gmap = np.empty(256, dtype=np.uint8)
+    bmap = np.empty(256, dtype=np.uint8)
+
+    for i in range(256):
+        r, g, b = gtia_ntsc_to_rgb_table(i)
+        rmap[i] = r
+        gmap[i] = g
+        bmap[i] = b
+
+    return rmap, gmap, bmap
+
 class Atari800(object):
     def __init__(self, args=None):
         self.args = self.normalize_args(args)
@@ -47,6 +103,7 @@ class Atari800(object):
         self.screen = np.empty((self.height, self.width, 3), np.uint8)
         self.bmp = None
         self.frame_count = 0
+        self.rmap, self.gmap, self.bmap = ntsc_color_map()
 
     def normalize_args(self, args):
         if args is None:
@@ -82,9 +139,9 @@ class Atari800(object):
         self.frame_count += 1
 
     def get_frame(self):
-        self.screen[:,:,0] = self.raw
-        self.screen[:,:,1] = self.raw
-        self.screen[:,:,2] = self.raw
+        self.screen[:,:,0] = self.rmap[self.raw]
+        self.screen[:,:,1] = self.gmap[self.raw]
+        self.screen[:,:,2] = self.bmap[self.raw]
 
     def get_bitmap(self):
         try:
