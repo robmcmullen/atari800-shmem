@@ -148,7 +148,7 @@ def runTest(frame, nb, log, emulator):
 # framework.
 class EmulatorApp(wx.App):
     def OnInit(self):
-        frame = wx.Frame(None, -1, "BitmapFromBuffer test", pos=(50,50),
+        frame = wx.Frame(None, -1, "wxPython atari800 test", pos=(50,50),
                          size=(200,100), style=wx.DEFAULT_FRAME_STYLE)
         frame.CreateStatusBar()
 
@@ -165,7 +165,7 @@ class EmulatorApp(wx.App):
         self.emulator = pyatari800.Atari800()
         self.emulator.multiprocess()
         win = runTest(frame, frame, None, self.emulator)
-        frame.SetSize((640, 480))
+        frame.SetSize((450, 350))
         win.SetFocus()
         self.SetTopWindow(frame)
         self.frame = frame
