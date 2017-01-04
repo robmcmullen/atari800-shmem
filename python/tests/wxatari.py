@@ -83,9 +83,11 @@ class EmulatorPanel(wx.Panel):
             else:
                 #self.updateDrawing()
                 self.Refresh()
+            if self.emulator.frame_count > 100:
+                self.emulator.exchange[1] = ord('A')
             self.emulator.next_frame()
 
-    def startTimer(self,repeat=False,delay=None,forceupdate=False):
+    def startTimer(self,repeat=False,delay=None,forceupdate=True):
         if not self.timer.IsRunning():
             self.repeat=repeat
             if delay is not None:
@@ -144,7 +146,7 @@ def runTest(frame, nb, log, emulator):
 
 # Not running inside the wxPython demo, so include the same basic
 # framework.
-class MovieApp(wx.App):
+class EmulatorApp(wx.App):
     def OnInit(self):
         frame = wx.Frame(None, -1, "BitmapFromBuffer test", pos=(50,50),
                          size=(200,100), style=wx.DEFAULT_FRAME_STYLE)
@@ -160,9 +162,9 @@ class MovieApp(wx.App):
         frame.Show(True)
         frame.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
 
-        emulator = pyatari800.Atari800()
-        emulator.multiprocess()
-        win = runTest(frame, frame, None, emulator)
+        self.emulator = pyatari800.Atari800()
+        self.emulator.multiprocess()
+        win = runTest(frame, frame, None, self.emulator)
         frame.SetSize((640, 480))
         win.SetFocus()
         self.SetTopWindow(frame)
@@ -170,13 +172,15 @@ class MovieApp(wx.App):
         return True
 
     def OnExitApp(self, evt):
+        self.emulator.stop_process()
         self.frame.Close(True)
 
     def OnCloseFrame(self, evt):
+        self.emulator.stop_process()
         evt.Skip()
 
 
 
 if __name__ == '__main__':
-    app = MovieApp()
+    app = EmulatorApp()
     app.MainLoop()
