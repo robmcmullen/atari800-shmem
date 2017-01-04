@@ -46,6 +46,7 @@ class Atari800(object):
         self.raw.shape = (240, 336)
         self.screen = np.empty((self.height, self.width, 3), np.uint8)
         self.bmp = None
+        self.frame_count = 0
 
     def normalize_args(self, args):
         if args is None:
@@ -61,20 +62,8 @@ class Atari800(object):
     def multiprocess(self):
         self.process = Process(target=start_emulator, args=(self.args, self.exchange, len(self.exchange)))
         self.process.start()
-        count = 0
-        while count < 200:
-            while True:
-                # wait for screen to be ready
-                if self.exchange[0] == 1:
-                    break
-                time.sleep(0.001)
-            print "parent", count
-            debug_video(self.exchange)
-            if count > 100:
-                self.exchange[1] = ord('A')
-            # tell emulator that input is ready
-            self.exchange[0] = 0;
-            count += 1
+
+    def stop_process(self):
         self.exchange[0] = 0xff
         self.process.join()
 
@@ -85,8 +74,12 @@ class Atari800(object):
                 break
             time.sleep(0.001)
 
+    def debug_video(self):
+        debug_video(self.exchange)
+
     def next_frame(self):
         self.exchange[0] = 0
+        self.frame_count += 1
 
     def get_frame(self):
         self.screen[:,:,0] = self.raw
