@@ -1,13 +1,12 @@
 from multiprocessing import Process, Array, RawArray
 import ctypes
 import time
+import numpy as np
 
 from pyatari800 import start_emulator
 from _metadata import __version__
 
 debug_frames = False
-
-exchange = None
 
 def debug_video(mem):
     offset = 336*24 + 640
@@ -41,6 +40,12 @@ class Atari800(object):
         self.args = self.normalize_args(args)
         self.exchange = create_exchange()
         self.process = None
+        self.width = 336
+        self.height = 240
+        self.raw = np.frombuffer(self.exchange, dtype=np.uint8, count=336*240, offset=640)
+        self.raw.shape = (240, 336)
+        self.screen = np.empty((self.height, self.width, 3), np.uint8)
+        self.bmp = None
 
     def normalize_args(self, args):
         if args is None:
@@ -72,3 +77,29 @@ class Atari800(object):
             count += 1
         self.exchange[0] = 0xff
         self.process.join()
+
+    def wait_for_frame(self):
+        while True:
+            # wait for screen to be ready
+            if self.exchange[0] == 1:
+                break
+            time.sleep(0.001)
+
+    def next_frame(self):
+        self.exchange[0] = 0
+
+    def get_frame(self):
+        self.screen[:,:,0] = self.raw
+        self.screen[:,:,1] = self.raw
+        self.screen[:,:,2] = self.raw
+
+    def get_bitmap(self):
+        try:
+            import wx
+        except ImportError:
+            return None
+        self.get_frame()
+        image = wx.ImageFromData(self.width, self.height, self.screen.tostring())
+        self.bmp = wx.BitmapFromImage(image)
+        return self.bmp
+
