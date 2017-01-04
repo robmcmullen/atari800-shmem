@@ -13,6 +13,8 @@ if module_dir not in sys.path:
     sys.path.insert(0, module_dir)
 import pyatari800
 
+KEY_WARMSTART = 2
+KEY_COLDSTART = 3
 
 class EmulatorPanel(wx.Panel):
     def __init__(self, parent, emulator):
@@ -83,8 +85,6 @@ class EmulatorPanel(wx.Panel):
             else:
                 #self.updateDrawing()
                 self.Refresh()
-            if self.emulator.frame_count > 100:
-                self.emulator.exchange[1] = ord('A')
             self.emulator.next_frame()
 
     def startTimer(self,repeat=False,delay=None,forceupdate=True):
@@ -154,9 +154,15 @@ class EmulatorApp(wx.App):
 
         menuBar = wx.MenuBar()
         menu = wx.Menu()
-        item = menu.Append(-1, "E&xit\tCtrl-Q", "Exit demo")
-        self.Bind(wx.EVT_MENU, self.OnExitApp, item)
+        item = menu.Append(wx.ID_EXIT, "E&xit\tCtrl-Q", "Exit demo")
+        self.Bind(wx.EVT_MENU, self.OnMenu, item)
         menuBar.Append(menu, "&File")
+
+        self.id_coldstart = wx.NewId()
+        menu = wx.Menu()
+        item = menu.Append(self.id_coldstart, "Cold Start", "Cold start (power switch off then on)")
+        self.Bind(wx.EVT_MENU, self.OnMenu, item)
+        menuBar.Append(menu, "&Machine")
 
         frame.SetMenuBar(menuBar)
         frame.Show(True)
@@ -171,9 +177,13 @@ class EmulatorApp(wx.App):
         self.frame = frame
         return True
 
-    def OnExitApp(self, evt):
-        self.emulator.stop_process()
-        self.frame.Close(True)
+    def OnMenu(self, evt):
+        id = evt.GetId()
+        if id == wx.ID_EXIT:
+            self.emulator.stop_process()
+            self.frame.Close(True)
+        elif id == self.id_coldstart:
+            self.emulator.send_special_key(KEY_COLDSTART)
 
     def OnCloseFrame(self, evt):
         self.emulator.stop_process()

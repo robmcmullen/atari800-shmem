@@ -104,6 +104,7 @@ class Atari800(object):
         self.bmp = None
         self.frame_count = 0
         self.rmap, self.gmap, self.bmap = ntsc_color_map()
+        self.frame_event = []
 
     def normalize_args(self, args):
         if args is None:
@@ -137,6 +138,17 @@ class Atari800(object):
     def next_frame(self):
         self.exchange[0] = 0
         self.frame_count += 1
+        self.process_frame_events()
+
+    def process_frame_events(self):
+        still_waiting = []
+        for count, callback in self.frame_event:
+            if self.frame_count >= count:
+                print "processing %s", callback
+                callback()
+            else:
+                still_waiting.append((count, callback))
+        self.frame_event = still_waiting
 
     def get_frame(self):
         self.screen[:,:,0] = self.rmap[self.raw]
@@ -153,3 +165,10 @@ class Atari800(object):
         self.bmp = wx.BitmapFromImage(image)
         return self.bmp
 
+    def send_special_key(self, key_id):
+        self.exchange[1:4] = [0, 0, key_id]
+        if key_id in [2, 3]:
+            self.frame_event.append((self.frame_count + 2, self.clear_keys))
+
+    def clear_keys(self):
+        self.exchange[1:4] = [0, 0, 0]
