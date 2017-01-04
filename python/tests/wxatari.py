@@ -99,12 +99,10 @@ class EmulatorPanel(wx.Panel):
         if self.timer.IsRunning():
             self.timer.Stop()
 
-    def isPlaying(self):
-        return self.timer.IsRunning()
+    def join_process(self):
+        self.stopTimer()
+        self.emulator.stop_process()
 
-    def setFrame(self,frame):
-        self.frame=frame
-        self.Refresh()
 
 
 class TestPanel(wx.Panel):
@@ -135,14 +133,10 @@ class TestPanel(wx.Panel):
 
     def OnStop(self,evt):
         self.emulator_control.stopTimer()
-        
-#----------------------------------------------------------------------
 
-def runTest(frame, nb, log, emulator):
-    win = TestPanel(nb, log, emulator)
-    return win
+    def end_emulation(self):
+        self.emulator_control.join_process()
 
-#----------------------------------------------------------------------
 
 # Not running inside the wxPython demo, so include the same basic
 # framework.
@@ -170,9 +164,9 @@ class EmulatorApp(wx.App):
 
         self.emulator = pyatari800.Atari800()
         self.emulator.multiprocess()
-        win = runTest(frame, frame, None, self.emulator)
+        self.emulator_panel = TestPanel(frame, None, self.emulator)
         frame.SetSize((450, 350))
-        win.SetFocus()
+        self.emulator_panel.SetFocus()
         self.SetTopWindow(frame)
         self.frame = frame
         return True
@@ -180,13 +174,13 @@ class EmulatorApp(wx.App):
     def OnMenu(self, evt):
         id = evt.GetId()
         if id == wx.ID_EXIT:
-            self.emulator.stop_process()
+            self.emulator_panel.end_emulation()
             self.frame.Close(True)
         elif id == self.id_coldstart:
             self.emulator.send_special_key(KEY_COLDSTART)
 
     def OnCloseFrame(self, evt):
-        self.emulator.stop_process()
+        self.emulator_panel.end_emulation()
         evt.Skip()
 
 
