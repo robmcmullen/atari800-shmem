@@ -24,7 +24,6 @@ class EmulatorPanel(wx.Panel):
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
         self.timer = wx.Timer(self)
-        self.delay = .001
         self.Bind(wx.EVT_TIMER, self.OnTimer)
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
@@ -37,7 +36,7 @@ class EmulatorPanel(wx.Panel):
         self.refreshed=False
         self.repeat=True
         self.forceupdate=False
-        self.delay = 0.001
+        self.delay = 5  # wxpython delays are in milliseconds
 
         self.OnSize(None)
         if self.IsDoubleBuffered():
@@ -70,22 +69,23 @@ class EmulatorPanel(wx.Panel):
         self.refreshed=True
 
     def OnIdle(self, evt):
-        #print "Idle!"
+        print "Idle!"
         if self.refreshed and self.firsttime:
             #self.startTimer()
             self.firsttime=False
 
     def OnTimer(self, evt):
         if self.timer.IsRunning():
-            print "hi"
-            self.emulator.wait_for_frame()
-            if self.forceupdate:
-                dc = wx.ClientDC(self)
-                self.updateDrawing(dc)
-            else:
-                #self.updateDrawing()
-                self.Refresh()
-            self.emulator.next_frame()
+            if self.emulator.is_frame_ready():
+                print "ready!"
+                if self.forceupdate:
+                    dc = wx.ClientDC(self)
+                    self.updateDrawing(dc)
+                else:
+                    #self.updateDrawing()
+                    self.Refresh()
+                self.emulator.next_frame()
+        evt.Skip()
 
     def startTimer(self,repeat=False,delay=None,forceupdate=True):
         if not self.timer.IsRunning():

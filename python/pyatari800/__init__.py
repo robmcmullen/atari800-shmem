@@ -125,6 +125,9 @@ class Atari800(object):
         self.exchange[0] = 0xff
         self.process.join()
 
+    def is_frame_ready(self):
+        return self.exchange[0] == 1
+
     def wait_for_frame(self):
         while True:
             # wait for screen to be ready
