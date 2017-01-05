@@ -74,4 +74,6 @@ def start_emulator(args, raw=None, size=0, pycb=None):
     else:
         start_shmem(argc, argv, NULL, 0, c_cb)
 
+    if debug_frames:
+        print "Finished start_shmem"
     free(c_args)

@@ -117,12 +117,23 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 	for (;;) {
 		for (;;) {
 			/* block until input ready */
-			if (input->main_semaphore == 0)
+			if (input->main_semaphore == 0) {
+#ifdef DEBUG
+				printf("Found 0; getting frame");
+#endif
 				break;
+			}
 
 			/* or asked to exit */
-			else if (input->main_semaphore == 0xff)
+			else if (input->main_semaphore == 0xff | input->main_semaphore == 2) {
+#ifdef DEBUG
+				printf("Found 0xff; stopping!\n");
+#endif
 				return 0;
+			}
+#ifdef DEBUG
+			printf("didn't find 0 or 0xff: %d\n", input->main_semaphore);
+#endif
 			Util_sleep(0.001);
 		}
 		INPUT_key_code = PLATFORM_Keyboard();

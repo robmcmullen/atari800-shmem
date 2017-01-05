@@ -122,8 +122,13 @@ class Atari800(object):
         self.process.start()
 
     def stop_process(self):
-        self.exchange[0] = 0xff
-        self.process.join()
+        if self.process is not None:
+            self.wait_for_frame()
+            self.exchange[0] = 0xff
+            self.process.join()
+            self.process = None
+        else:
+            print "already stopped"
 
     def is_frame_ready(self):
         return self.exchange[0] == 1
