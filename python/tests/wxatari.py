@@ -21,16 +21,10 @@ class EmulatorPanel(wx.Panel):
         self.parent = parent
         self.emulator = emulator
         wx.Panel.__init__(self, parent, -1, size=(emulator.width, emulator.height))
-        self.Bind(wx.EVT_IDLE, self.OnIdle)
 
         self.timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.OnTimer)
-        self.Bind(wx.EVT_SIZE, self.OnSize)
-
-        # Catch and ignore the erase event that is apparently called
-        # automatically.  Found this here:
-        # http://mail.python.org/pipermail/python-list/2003-April/158724.html
-        self.Bind(wx.EVT_ERASE_BACKGROUND, self.NoOp)
+        self.Bind(wx.EVT_TIMER, self.on_timer)
+        self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.firsttime=True
         self.refreshed=False
@@ -38,16 +32,13 @@ class EmulatorPanel(wx.Panel):
         self.forceupdate=False
         self.delay = 5  # wxpython delays are in milliseconds
 
-        self.OnSize(None)
+        self.on_size(None)
         if self.IsDoubleBuffered():
-            self.Bind(wx.EVT_PAINT, self.OnPaint)
+            self.Bind(wx.EVT_PAINT, self.on_paint)
         else:
-            self.Bind(wx.EVT_PAINT, self.OnPaintDoubleBuffer)
+            self.Bind(wx.EVT_PAINT, self.on_paint_double_buffer)
 
-    def NoOp(self,evt):
-        pass
-
-    def OnSize(self,evt):
+    def on_size(self,evt):
         if not self.IsDoubleBuffered():
             # make new background buffer
             size  = self.GetClientSizeTuple()
@@ -58,23 +49,17 @@ class EmulatorPanel(wx.Panel):
         bmp=self.emulator.get_bitmap()
         dc.DrawBitmap(bmp, 0,0, True)
 
-    def OnPaint(self, evt):
+    def on_paint(self, evt):
         dc=wx.PaintDC(self)
         self.updateDrawing(dc)
         self.refreshed=True
 
-    def OnPaintDoubleBuffer(self, evt):
+    def on_paint_double_buffer(self, evt):
         dc=wx.BufferedPaintDC(self,self._buffer)
         self.updateDrawing(dc)
         self.refreshed=True
 
-    def OnIdle(self, evt):
-        print "Idle!"
-        if self.refreshed and self.firsttime:
-            #self.startTimer()
-            self.firsttime=False
-
-    def OnTimer(self, evt):
+    def on_timer(self, evt):
         if self.timer.IsRunning():
             if self.emulator.is_frame_ready():
                 print "ready!"
@@ -87,7 +72,7 @@ class EmulatorPanel(wx.Panel):
                 self.emulator.next_frame()
         evt.Skip()
 
-    def startTimer(self,repeat=False,delay=None,forceupdate=True):
+    def start_timer(self,repeat=False,delay=None,forceupdate=True):
         if not self.timer.IsRunning():
             self.repeat=repeat
             if delay is not None:
@@ -95,12 +80,12 @@ class EmulatorPanel(wx.Panel):
             self.forceupdate=forceupdate
             self.timer.Start(self.delay)
 
-    def stopTimer(self):
+    def stop_timer(self):
         if self.timer.IsRunning():
             self.timer.Stop()
 
     def join_process(self):
-        self.stopTimer()
+        self.stop_timer()
         self.emulator.stop_process()
 
 
@@ -115,10 +100,10 @@ class TestPanel(wx.Panel):
 
         self.buttonbox=wx.BoxSizer(wx.HORIZONTAL)
         b = wx.Button(self, -1, "Start")
-        self.Bind(wx.EVT_BUTTON, self.OnPlay, b)
+        self.Bind(wx.EVT_BUTTON, self.on_start, b)
         self.buttonbox.Add(b, 0, wx.ALIGN_CENTER)
         b = wx.Button(self, -1, "Pause")
-        self.Bind(wx.EVT_BUTTON, self.OnStop, b)
+        self.Bind(wx.EVT_BUTTON, self.on_pause, b)
         self.buttonbox.Add(b, 0, wx.ALIGN_CENTER)
         
         self.box = wx.BoxSizer(wx.VERTICAL)
@@ -128,11 +113,11 @@ class TestPanel(wx.Panel):
         self.SetSizer(self.box)
         self.Layout()
 
-    def OnPlay(self,evt):
-        self.emulator_control.startTimer(repeat=True,delay=self.emulator_control.delay)
+    def on_start(self,evt):
+        self.emulator_control.start_timer(repeat=True,delay=self.emulator_control.delay)
 
-    def OnStop(self,evt):
-        self.emulator_control.stopTimer()
+    def on_pause(self,evt):
+        self.emulator_control.stop_timer()
 
     def end_emulation(self):
         self.emulator_control.join_process()
@@ -149,18 +134,18 @@ class EmulatorApp(wx.App):
         menuBar = wx.MenuBar()
         menu = wx.Menu()
         item = menu.Append(wx.ID_EXIT, "E&xit\tCtrl-Q", "Exit demo")
-        self.Bind(wx.EVT_MENU, self.OnMenu, item)
+        self.Bind(wx.EVT_MENU, self.on_menu, item)
         menuBar.Append(menu, "&File")
 
         self.id_coldstart = wx.NewId()
         menu = wx.Menu()
         item = menu.Append(self.id_coldstart, "Cold Start", "Cold start (power switch off then on)")
-        self.Bind(wx.EVT_MENU, self.OnMenu, item)
+        self.Bind(wx.EVT_MENU, self.on_menu, item)
         menuBar.Append(menu, "&Machine")
 
         frame.SetMenuBar(menuBar)
         frame.Show(True)
-        frame.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
+        frame.Bind(wx.EVT_CLOSE, self.on_close_frame)
 
         self.emulator = pyatari800.Atari800()
         self.emulator.multiprocess()
@@ -171,7 +156,7 @@ class EmulatorApp(wx.App):
         self.frame = frame
         return True
 
-    def OnMenu(self, evt):
+    def on_menu(self, evt):
         id = evt.GetId()
         if id == wx.ID_EXIT:
             self.emulator_panel.end_emulation()
@@ -179,7 +164,7 @@ class EmulatorApp(wx.App):
         elif id == self.id_coldstart:
             self.emulator.send_special_key(KEY_COLDSTART)
 
-    def OnCloseFrame(self, evt):
+    def on_close_frame(self, evt):
         self.emulator_panel.end_emulation()
         evt.Skip()
 
