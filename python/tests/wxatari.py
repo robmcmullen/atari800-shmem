@@ -13,6 +13,11 @@ if module_dir not in sys.path:
     sys.path.insert(0, module_dir)
 import pyatari800
 
+import logging
+logging.basicConfig(level=logging.WARNING)
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
+
 KEY_WARMSTART = 2
 KEY_COLDSTART = 3
 
@@ -25,6 +30,9 @@ class EmulatorPanel(wx.Panel):
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.on_timer)
         self.Bind(wx.EVT_SIZE, self.on_size)
+        self.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.Bind(wx.EVT_CHAR, self.on_char)
 
         self.firsttime=True
         self.refreshed=False
@@ -37,6 +45,22 @@ class EmulatorPanel(wx.Panel):
             self.Bind(wx.EVT_PAINT, self.on_paint)
         else:
             self.Bind(wx.EVT_PAINT, self.on_paint_double_buffer)
+    
+    def on_key_down(self, evt):
+        log.debug("key down before evt=%s" % evt.GetKeyCode())
+        key=evt.GetKeyCode()
+        evt.Skip()
+    
+    def on_key_up(self, evt):
+        log.debug("key up before evt=%s" % evt.GetKeyCode())
+        key=evt.GetKeyCode()
+        evt.Skip()
+
+    def on_char(self, evt):
+        log.debug("on_char! char=%s, key=%s, modifiers=%s" % (evt.GetUniChar(), evt.GetKeyCode(), bin(evt.GetModifiers())))
+        mods = evt.GetModifiers()
+        char = evt.GetUniChar()
+        evt.Skip()
 
     def on_size(self,evt):
         if not self.IsDoubleBuffered():
