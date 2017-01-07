@@ -49,18 +49,25 @@ class EmulatorPanel(wx.Panel):
         else:
             self.Bind(wx.EVT_PAINT, self.on_paint_double_buffer)
     
+    wx_to_akey = {
+        wx.WXK_UP: AKEY_UP,
+        wx.WXK_DOWN: AKEY_DOWN,
+        wx.WXK_LEFT: AKEY_LEFT,
+        wx.WXK_RIGHT: AKEY_RIGHT,
+        wx.WXK_BACK: AKEY_BACKSPACE,
+        wx.WXK_DELETE: AKEY_DELETE_CHAR,
+        wx.WXK_INSERT: AKEY_INSERT_CHAR,
+        wx.WXK_ESCAPE: AKEY_ESCAPE,
+        wx.WXK_END: AKEY_HELP,
+        wx.WXK_HOME: AKEY_CLEAR,
+        wx.WXK_RETURN: AKEY_RETURN,
+        96: AKEY_ATARI,
+    }
+
     def on_key_down(self, evt):
         log.debug("key down before evt=%s" % evt.GetKeyCode())
         key = evt.GetKeyCode()
-        akey = None
-        if key == wx.WXK_UP:
-            akey = AKEY_UP
-        elif key == wx.WXK_DOWN:
-            akey = AKEY_DOWN
-        elif key == wx.WXK_LEFT:
-            akey = AKEY_LEFT
-        elif key == wx.WXK_RIGHT:
-            akey = AKEY_RIGHT
+        akey = self.wx_to_akey.get(key, None)
 
         if akey is None:
             evt.Skip()
