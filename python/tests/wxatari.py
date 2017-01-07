@@ -14,6 +14,7 @@ if module_dir not in sys.path:
     sys.path.insert(0, module_dir)
 import pyatari800
 from pyatari800.akey import *
+from pyatari800.shmem import *
 
 import logging
 logging.basicConfig(level=logging.WARNING)
@@ -114,6 +115,16 @@ class EmulatorPanel(wx.Panel):
 
         evt.Skip()
 
+    def process_key_presses(self):
+        up = 0b0001 if wx.GetKeyState(wx.WXK_UP) else 0
+        down = 0b0010 if wx.GetKeyState(wx.WXK_DOWN) else 0
+        left = 0b0100 if wx.GetKeyState(wx.WXK_LEFT) else 0
+        right = 0b1000 if wx.GetKeyState(wx.WXK_RIGHT) else 0
+        self.emulator.exchange[input_joy0] = up | down | left | right
+        trig = 1 if wx.GetKeyState(wx.WXK_CONTROL) else 0
+        self.emulator.exchange[input_trig0] = trig
+        #print "joy", self.emulator.exchange[input_joy0], "trig", trig
+
     def on_size(self,evt):
         if not self.IsDoubleBuffered():
             # make new background buffer
@@ -145,6 +156,7 @@ class EmulatorPanel(wx.Panel):
                     #self.updateDrawing()
                     self.Refresh()
                 self.emulator.next_frame()
+            self.process_key_presses()
         evt.Skip()
 
     def start_timer(self,repeat=False,delay=None,forceupdate=True):
