@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import time
 import wx
 import wx.lib.newevent
@@ -200,6 +201,8 @@ class TestPanel(wx.Panel):
 # Not running inside the wxPython demo, so include the same basic
 # framework.
 class EmulatorApp(wx.App):
+    parsed_args = []
+
     def OnInit(self):
         frame = wx.Frame(None, -1, "wxPython atari800 test", pos=(50,50),
                          size=(200,100), style=wx.DEFAULT_FRAME_STYLE)
@@ -221,7 +224,7 @@ class EmulatorApp(wx.App):
         frame.Show(True)
         frame.Bind(wx.EVT_CLOSE, self.on_close_frame)
 
-        self.emulator = pyatari800.Atari800()
+        self.emulator = pyatari800.Atari800(self.parsed_args)
         self.emulator.multiprocess()
         self.emulator_panel = TestPanel(frame, None, self.emulator)
         frame.SetSize((450, 350))
@@ -245,5 +248,11 @@ class EmulatorApp(wx.App):
 
 
 if __name__ == '__main__':
+    # use argparse rather than sys.argv to handle the difference in being
+    # called as "python script.py" and "./script.py"
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Atari800 WX Demo')
+    EmulatorApp.parsed_args = parser.parse_known_args()[1]
     app = EmulatorApp()
     app.MainLoop()
