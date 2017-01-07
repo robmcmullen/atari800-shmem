@@ -55,6 +55,9 @@ class EmulatorPanel(wx.Panel):
         wx.WXK_END: AKEY_HELP,
         wx.WXK_HOME: AKEY_CLEAR,
         wx.WXK_RETURN: AKEY_RETURN,
+        wx.WXK_SPACE: AKEY_SPACE,
+        wx.WXK_F7: AKEY_BREAK,
+        wx.WXK_PAUSE: AKEY_BREAK,
         96: AKEY_ATARI,  # back tick
     }
 
