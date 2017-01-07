@@ -12,6 +12,7 @@ module_dir = os.path.realpath(os.path.abspath(".."))
 if module_dir not in sys.path:
     sys.path.insert(0, module_dir)
 import pyatari800
+from pyatari800.akey import *
 
 import logging
 logging.basicConfig(level=logging.WARNING)
@@ -40,6 +41,8 @@ class EmulatorPanel(wx.Panel):
         self.forceupdate=False
         self.delay = 5  # wxpython delays are in milliseconds
 
+        self.key_down = False
+
         self.on_size(None)
         if self.IsDoubleBuffered():
             self.Bind(wx.EVT_PAINT, self.on_paint)
@@ -48,18 +51,33 @@ class EmulatorPanel(wx.Panel):
     
     def on_key_down(self, evt):
         log.debug("key down before evt=%s" % evt.GetKeyCode())
-        key=evt.GetKeyCode()
-        evt.Skip()
+        key = evt.GetKeyCode()
+        akey = None
+        if key == wx.WXK_UP:
+            akey = AKEY_UP
+        elif key == wx.WXK_DOWN:
+            akey = AKEY_DOWN
+        elif key == wx.WXK_LEFT:
+            akey = AKEY_LEFT
+        elif key == wx.WXK_RIGHT:
+            akey = AKEY_RIGHT
+
+        if akey is None:
+            evt.Skip()
+        else:
+            self.emulator.send_keycode(akey)
     
     def on_key_up(self, evt):
         log.debug("key up before evt=%s" % evt.GetKeyCode())
         key=evt.GetKeyCode()
+        self.emulator.clear_keys()
         evt.Skip()
 
     def on_char(self, evt):
-        log.debug("on_char! char=%s, key=%s, modifiers=%s" % (evt.GetUniChar(), evt.GetKeyCode(), bin(evt.GetModifiers())))
+        log.debug("on_char! char=%s, key=%s, raw=%s modifiers=%s" % (evt.GetUniChar(), evt.GetKeyCode(), evt.GetRawKeyCode(), bin(evt.GetModifiers())))
         mods = evt.GetModifiers()
         char = evt.GetUniChar()
+        self.emulator.send_char(char)
         evt.Skip()
 
     def on_size(self,evt):

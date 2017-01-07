@@ -173,6 +173,12 @@ class Atari800(object):
         self.bmp = wx.BitmapFromImage(image)
         return self.bmp
 
+    def send_char(self, key_char):
+        self.exchange[1:4] = [key_char, 0, 0]
+
+    def send_keycode(self, keycode):
+        self.exchange[1:4] = [0, keycode, 0]
+
     def send_special_key(self, key_id):
         self.exchange[1:4] = [0, 0, key_id]
         if key_id in [2, 3]:
