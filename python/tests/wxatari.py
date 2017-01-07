@@ -19,8 +19,6 @@ logging.basicConfig(level=logging.WARNING)
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-KEY_WARMSTART = 2
-KEY_COLDSTART = 3
 
 class EmulatorPanel(wx.Panel):
     def __init__(self, parent, emulator):
@@ -57,7 +55,7 @@ class EmulatorPanel(wx.Panel):
         wx.WXK_END: AKEY_HELP,
         wx.WXK_HOME: AKEY_CLEAR,
         wx.WXK_RETURN: AKEY_RETURN,
-        96: AKEY_ATARI,
+        96: AKEY_ATARI,  # back tick
     }
 
     wx_to_akey_ctrl = {
@@ -235,7 +233,7 @@ class EmulatorApp(wx.App):
             self.emulator_panel.end_emulation()
             self.frame.Close(True)
         elif id == self.id_coldstart:
-            self.emulator.send_special_key(KEY_COLDSTART)
+            self.emulator.send_special_key(AKEY_COLDSTART)
 
     def on_close_frame(self, evt):
         self.emulator_panel.end_emulation()
