@@ -78,13 +78,31 @@ class EmulatorPanel(wx.Panel):
         log.debug("key up before evt=%s" % evt.GetKeyCode())
         key=evt.GetKeyCode()
         self.emulator.clear_keys()
+
+        if key == wx.WXK_F2:
+            self.emulator.set_option(0)
+        if key == wx.WXK_F3:
+            self.emulator.set_select(0)
+        if key == wx.WXK_F4:
+            self.emulator.set_start(0)
+
         evt.Skip()
 
     def on_char(self, evt):
         log.debug("on_char! char=%s, key=%s, raw=%s modifiers=%s" % (evt.GetUniChar(), evt.GetKeyCode(), evt.GetRawKeyCode(), bin(evt.GetModifiers())))
         mods = evt.GetModifiers()
         char = evt.GetUniChar()
-        self.emulator.send_char(char)
+        if char > 0:
+            self.emulator.send_char(char)
+        else:
+            key = evt.GetKeyCode()
+            if key == wx.WXK_F2:
+                self.emulator.set_option(1)
+            if key == wx.WXK_F3:
+                self.emulator.set_select(1)
+            if key == wx.WXK_F4:
+                self.emulator.set_start(1)
+
         evt.Skip()
 
     def on_size(self,evt):

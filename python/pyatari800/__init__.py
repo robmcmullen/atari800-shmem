@@ -4,6 +4,7 @@ import time
 import numpy as np
 
 from pyatari800 import start_emulator
+from shmem import *
 from _metadata import __version__
 
 debug_frames = False
@@ -109,8 +110,9 @@ class Atari800(object):
     def normalize_args(self, args):
         if args is None:
             args = [
-                "-basic",
-                "-shmem-debug-video",
+                #"-basic",
+                #"-shmem-debug-video",
+                "jumpman.atr"
             ]
         return args
 
@@ -186,3 +188,13 @@ class Atari800(object):
 
     def clear_keys(self):
         self.exchange[1:4] = [0, 0, 0]
+
+    def set_option(self, state):
+        self.exchange[input_option] = state
+
+    def set_select(self, state):
+        self.exchange[input_select] = state
+
+    def set_start(self, state):
+        self.exchange[input_start] = state
+
