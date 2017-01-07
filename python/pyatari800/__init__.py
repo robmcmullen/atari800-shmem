@@ -110,9 +110,9 @@ class Atari800(object):
     def normalize_args(self, args):
         if args is None:
             args = [
-                #"-basic",
+                "-basic",
                 #"-shmem-debug-video",
-                "jumpman.atr"
+                #"jumpman.atr"
             ]
         return args
 

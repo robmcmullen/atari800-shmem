@@ -50,10 +50,6 @@ class EmulatorPanel(wx.Panel):
             self.Bind(wx.EVT_PAINT, self.on_paint_double_buffer)
     
     wx_to_akey = {
-        wx.WXK_UP: AKEY_UP,
-        wx.WXK_DOWN: AKEY_DOWN,
-        wx.WXK_LEFT: AKEY_LEFT,
-        wx.WXK_RIGHT: AKEY_RIGHT,
         wx.WXK_BACK: AKEY_BACKSPACE,
         wx.WXK_DELETE: AKEY_DELETE_CHAR,
         wx.WXK_INSERT: AKEY_INSERT_CHAR,
@@ -64,10 +60,21 @@ class EmulatorPanel(wx.Panel):
         96: AKEY_ATARI,
     }
 
+    wx_to_akey_ctrl = {
+        wx.WXK_UP: AKEY_UP,
+        wx.WXK_DOWN: AKEY_DOWN,
+        wx.WXK_LEFT: AKEY_LEFT,
+        wx.WXK_RIGHT: AKEY_RIGHT,
+    }
+
     def on_key_down(self, evt):
-        log.debug("key down before evt=%s" % evt.GetKeyCode())
+        log.debug("key down! key=%s mod=%s" % (evt.GetKeyCode(), evt.GetModifiers()))
         key = evt.GetKeyCode()
-        akey = self.wx_to_akey.get(key, None)
+        mod = evt.GetModifiers()
+        if mod == wx.MOD_CONTROL:
+            akey = self.wx_to_akey_ctrl.get(key, None)
+        else:
+            akey = self.wx_to_akey.get(key, None)
 
         if akey is None:
             evt.Skip()
@@ -129,7 +136,6 @@ class EmulatorPanel(wx.Panel):
     def on_timer(self, evt):
         if self.timer.IsRunning():
             if self.emulator.is_frame_ready():
-                print "ready!"
                 if self.forceupdate:
                     dc = wx.ClientDC(self)
                     self.updateDrawing(dc)
