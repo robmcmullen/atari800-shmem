@@ -89,13 +89,6 @@ class EmulatorPanel(wx.Panel):
         key=evt.GetKeyCode()
         self.emulator.clear_keys()
 
-        if key == wx.WXK_F2:
-            self.emulator.set_option(0)
-        if key == wx.WXK_F3:
-            self.emulator.set_select(0)
-        if key == wx.WXK_F4:
-            self.emulator.set_start(0)
-
         evt.Skip()
 
     def on_char(self, evt):
@@ -106,16 +99,10 @@ class EmulatorPanel(wx.Panel):
             self.emulator.send_char(char)
         else:
             key = evt.GetKeyCode()
-            if key == wx.WXK_F2:
-                self.emulator.set_option(1)
-            if key == wx.WXK_F3:
-                self.emulator.set_select(1)
-            if key == wx.WXK_F4:
-                self.emulator.set_start(1)
 
         evt.Skip()
 
-    def process_key_presses(self):
+    def process_key_state(self):
         up = 0b0001 if wx.GetKeyState(wx.WXK_UP) else 0
         down = 0b0010 if wx.GetKeyState(wx.WXK_DOWN) else 0
         left = 0b0100 if wx.GetKeyState(wx.WXK_LEFT) else 0
@@ -124,6 +111,12 @@ class EmulatorPanel(wx.Panel):
         trig = 1 if wx.GetKeyState(wx.WXK_CONTROL) else 0
         self.emulator.exchange[input_trig0] = trig
         #print "joy", self.emulator.exchange[input_joy0], "trig", trig
+
+        # console keys will reflect being pressed if at any time between frames
+        # the key has been pressed
+        self.emulator.exchange[input_option] = 1 if wx.GetKeyState(wx.WXK_F2) else 0
+        self.emulator.exchange[input_select] = 1 if wx.GetKeyState(wx.WXK_F3) else 0
+        self.emulator.exchange[input_start] = 1 if wx.GetKeyState(wx.WXK_F4) else 0
 
     def on_size(self,evt):
         if not self.IsDoubleBuffered():
@@ -156,7 +149,7 @@ class EmulatorPanel(wx.Panel):
                     #self.updateDrawing()
                     self.Refresh()
                 self.emulator.next_frame()
-            self.process_key_presses()
+            self.process_key_state()
         evt.Skip()
 
     def start_timer(self,repeat=False,delay=None,forceupdate=True):
