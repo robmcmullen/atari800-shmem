@@ -171,7 +171,7 @@ class EmulatorPanel(wx.Panel):
 
 
 class TestPanel(wx.Panel):
-    def __init__(self, parent, log, emulator):
+    def __init__(self, parent, log, emulator, autostart=True):
         self.parent=parent
         self.log = log
         wx.Panel.__init__(self, parent, -1)
@@ -192,6 +192,9 @@ class TestPanel(wx.Panel):
 
         self.SetSizer(self.box)
         self.Layout()
+
+        if autostart:
+            wx.CallAfter(self.on_start, None)
 
     def on_start(self,evt):
         self.emulator_control.start_timer(repeat=True,delay=self.emulator_control.delay)
