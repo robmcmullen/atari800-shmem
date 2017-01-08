@@ -96,6 +96,7 @@ class Atari800(object):
     def __init__(self, args=None):
         self.args = self.normalize_args(args)
         self.exchange = create_exchange()
+        self.exchange_input = self.create_input_view(self.exchange)
         self.process = None
         self.width = 336
         self.height = 240
@@ -106,6 +107,13 @@ class Atari800(object):
         self.frame_count = 0
         self.rmap, self.gmap, self.bmap = ntsc_color_map()
         self.frame_event = []
+
+    def create_input_view(self, source):
+        size = INPUT_DTYPE.itemsize
+        if not isinstance(source, np.ndarray):
+            source = np.frombuffer(source, dtype=np.uint8)
+        view = source[0:size].view(INPUT_DTYPE, type=np.recarray)
+        return view
 
     def normalize_args(self, args):
         if args is None:
@@ -126,19 +134,19 @@ class Atari800(object):
     def stop_process(self):
         if self.process is not None:
             self.wait_for_frame()
-            self.exchange[0] = 0xff
+            self.exchange_input[0].main_semaphore = 0xff
             self.process.join()
             self.process = None
         else:
             print "already stopped"
 
     def is_frame_ready(self):
-        return self.exchange[0] == 1
+        return self.exchange_input[0].main_semaphore == 1
 
     def wait_for_frame(self):
         while True:
             # wait for screen to be ready
-            if self.exchange[0] == 1:
+            if self.exchange_input[0].main_semaphore == 1:
                 break
             time.sleep(0.001)
 
@@ -146,7 +154,7 @@ class Atari800(object):
         debug_video(self.exchange)
 
     def next_frame(self):
-        self.exchange[0] = 0
+        self.exchange_input[0].main_semaphore = 0
         self.frame_count += 1
         self.process_frame_events()
 
@@ -190,11 +198,11 @@ class Atari800(object):
         self.exchange[1:4] = [0, 0, 0]
 
     def set_option(self, state):
-        self.exchange[input_option] = state
+        self.exchange_input[0].option = state
 
     def set_select(self, state):
-        self.exchange[input_select] = state
+        self.exchange_input[0].select = state
 
     def set_start(self, state):
-        self.exchange[input_start] = state
+        self.exchange_input[0].start = state
 

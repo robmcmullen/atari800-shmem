@@ -107,16 +107,16 @@ class EmulatorPanel(wx.Panel):
         down = 0b0010 if wx.GetKeyState(wx.WXK_DOWN) else 0
         left = 0b0100 if wx.GetKeyState(wx.WXK_LEFT) else 0
         right = 0b1000 if wx.GetKeyState(wx.WXK_RIGHT) else 0
-        self.emulator.exchange[input_joy0] = up | down | left | right
+        self.emulator.exchange_input.joy0 = up | down | left | right
         trig = 1 if wx.GetKeyState(wx.WXK_CONTROL) else 0
-        self.emulator.exchange[input_trig0] = trig
-        #print "joy", self.emulator.exchange[input_joy0], "trig", trig
+        self.emulator.exchange_input.trig0 = trig
+        #print "joy", self.emulator.exchange_input.joy0, "trig", trig
 
         # console keys will reflect being pressed if at any time between frames
         # the key has been pressed
-        self.emulator.exchange[input_option] = 1 if wx.GetKeyState(wx.WXK_F2) else 0
-        self.emulator.exchange[input_select] = 1 if wx.GetKeyState(wx.WXK_F3) else 0
-        self.emulator.exchange[input_start] = 1 if wx.GetKeyState(wx.WXK_F4) else 0
+        self.emulator.exchange_input.option = 1 if wx.GetKeyState(wx.WXK_F2) else 0
+        self.emulator.exchange_input.select = 1 if wx.GetKeyState(wx.WXK_F3) else 0
+        self.emulator.exchange_input.start = 1 if wx.GetKeyState(wx.WXK_F4) else 0
 
     def on_size(self,evt):
         if not self.IsDoubleBuffered():
