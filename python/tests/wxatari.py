@@ -22,8 +22,8 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-class EmulatorPanel(wx.Panel):
-    def __init__(self, parent, emulator):
+class EmulatorControl(wx.Panel):
+    def __init__(self, parent, emulator, autostart=False):
         self.parent = parent
         self.emulator = emulator
         wx.Panel.__init__(self, parent, -1, size=(emulator.width, emulator.height))
@@ -40,6 +40,7 @@ class EmulatorPanel(wx.Panel):
         self.repeat=True
         self.forceupdate=False
         self.delay = 5  # wxpython delays are in milliseconds
+        self.screen_scale = 1
 
         self.key_down = False
 
@@ -48,6 +49,9 @@ class EmulatorPanel(wx.Panel):
             self.Bind(wx.EVT_PAINT, self.on_paint)
         else:
             self.Bind(wx.EVT_PAINT, self.on_paint_double_buffer)
+
+        if autostart:
+            wx.CallAfter(self.on_start, None)
     
     wx_to_akey = {
         wx.WXK_BACK: AKEY_BACKSPACE,
@@ -118,6 +122,27 @@ class EmulatorPanel(wx.Panel):
         self.emulator.exchange_input.select = 1 if wx.GetKeyState(wx.WXK_F3) else 0
         self.emulator.exchange_input.start = 1 if wx.GetKeyState(wx.WXK_F4) else 0
 
+    def get_bitmap(self, frame):
+        scaled = self.scale_frame(frame)
+        h, w, _ = scaled.shape
+        image = wx.ImageFromData(w, h, scaled.tostring())
+        bmp = wx.BitmapFromImage(image)
+        return bmp
+
+    def scale_frame(self, frame):
+        if self.screen_scale == 1:
+            return frame
+
+        newdims = np.asarray((frame.shape[0] * self.screen_scale, frame.shape[1] * self.screen_scale))
+        base = np.indices(newdims)
+        d = []
+        d.append(base[0]/self.screen_scale)
+        d.append(base[1]/self.screen_scale)
+        cd = np.array(d)
+        scaled = frame[list(cd)]
+        print "scale: %d, %s" % (self.screen_scale, scaled.shape)
+        return scaled
+
     def on_size(self,evt):
         if not self.IsDoubleBuffered():
             # make new background buffer
@@ -126,7 +151,8 @@ class EmulatorPanel(wx.Panel):
 
     def updateDrawing(self,dc):
         #dc=wx.BufferedDC(wx.ClientDC(self), self._buffer)
-        bmp=self.emulator.get_bitmap()
+        frame = self.emulator.get_frame()
+        bmp = self.get_bitmap(frame)
         dc.DrawBitmap(bmp, 0,0, True)
 
     def on_paint(self, evt):
@@ -168,42 +194,18 @@ class EmulatorPanel(wx.Panel):
         self.stop_timer()
         self.emulator.stop_process()
 
+    def on_start(self, evt=None):
+        self.start_timer(repeat=True)
 
+    @property
+    def is_paused(self):
+        return not self.timer.IsRunning()
 
-class TestPanel(wx.Panel):
-    def __init__(self, parent, log, emulator, autostart=True):
-        self.parent=parent
-        self.log = log
-        wx.Panel.__init__(self, parent, -1)
-
-        self.emulator_control = EmulatorPanel(self, emulator)
-
-        self.buttonbox=wx.BoxSizer(wx.HORIZONTAL)
-        b = wx.Button(self, -1, "Start")
-        self.Bind(wx.EVT_BUTTON, self.on_start, b)
-        self.buttonbox.Add(b, 0, wx.ALIGN_CENTER)
-        b = wx.Button(self, -1, "Pause")
-        self.Bind(wx.EVT_BUTTON, self.on_pause, b)
-        self.buttonbox.Add(b, 0, wx.ALIGN_CENTER)
-        
-        self.box = wx.BoxSizer(wx.VERTICAL)
-        self.box.Add(self.emulator_control, 1, wx.EXPAND)
-        self.box.Add(self.buttonbox, 0, wx.EXPAND)
-
-        self.SetSizer(self.box)
-        self.Layout()
-
-        if autostart:
-            wx.CallAfter(self.on_start, None)
-
-    def on_start(self,evt):
-        self.emulator_control.start_timer(repeat=True,delay=self.emulator_control.delay)
-
-    def on_pause(self,evt):
-        self.emulator_control.stop_timer()
+    def on_pause(self, evt=None):
+        self.stop_timer()
 
     def end_emulation(self):
-        self.emulator_control.join_process()
+        self.join_process()
 
 
 # Not running inside the wxPython demo, so include the same basic
@@ -222,11 +224,27 @@ class EmulatorApp(wx.App):
         self.Bind(wx.EVT_MENU, self.on_menu, item)
         menuBar.Append(menu, "&File")
 
+        self.id_pause = wx.NewId()
         self.id_coldstart = wx.NewId()
+        self.id_warmstart = wx.NewId()
         menu = wx.Menu()
+        self.pause_item = menu.Append(self.id_pause, "Pause", "Pause or resume the emulation")
+        self.Bind(wx.EVT_MENU, self.on_menu, self.pause_item)
+        menu.AppendSeparator()
         item = menu.Append(self.id_coldstart, "Cold Start", "Cold start (power switch off then on)")
         self.Bind(wx.EVT_MENU, self.on_menu, item)
+        item = menu.Append(self.id_coldstart, "Warm Start", "Warm start (reset switch)")
+        self.Bind(wx.EVT_MENU, self.on_menu, item)
         menuBar.Append(menu, "&Machine")
+
+        self.id_screen1x = wx.NewId()
+        self.id_screen2x = wx.NewId()
+        menu = wx.Menu()
+        item = menu.Append(self.id_screen1x, "Display 1x", "No magnification")
+        self.Bind(wx.EVT_MENU, self.on_menu, item)
+        item = menu.Append(self.id_screen2x, "Display 2x", "2x display")
+        self.Bind(wx.EVT_MENU, self.on_menu, item)
+        menuBar.Append(menu, "&Screen")
 
         frame.SetMenuBar(menuBar)
         frame.Show(True)
@@ -234,7 +252,7 @@ class EmulatorApp(wx.App):
 
         self.emulator = pyatari800.Atari800(self.parsed_args)
         self.emulator.multiprocess()
-        self.emulator_panel = TestPanel(frame, None, self.emulator)
+        self.emulator_panel = EmulatorControl(frame, self.emulator, autostart=True)
         frame.SetSize((450, 350))
         self.emulator_panel.SetFocus()
         self.SetTopWindow(frame)
@@ -248,6 +266,20 @@ class EmulatorApp(wx.App):
             self.frame.Close(True)
         elif id == self.id_coldstart:
             self.emulator.send_special_key(AKEY_COLDSTART)
+        elif id == self.id_warmstart:
+            self.emulator.send_special_key(AKEY_WARMSTART)
+        elif id == self.id_screen1x:
+            self.emulator_panel.screen_scale = 1
+        elif id == self.id_screen2x:
+            self.emulator_panel.screen_scale = 2
+        elif id == self.id_pause:
+            if self.emulator_panel.is_paused:
+                self.emulator_panel.on_start()
+                self.pause_item.SetItemLabel("Pause")
+            else:
+                self.emulator_panel.on_pause()
+                self.pause_item.SetItemLabel("Resume")
+
 
     def on_close_frame(self, evt):
         self.emulator_panel.end_emulation()

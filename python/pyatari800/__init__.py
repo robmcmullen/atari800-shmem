@@ -103,7 +103,6 @@ class Atari800(object):
         self.raw = np.frombuffer(self.exchange, dtype=np.uint8, count=336*240, offset=640)
         self.raw.shape = (240, 336)
         self.screen = np.empty((self.height, self.width, 3), np.uint8)
-        self.bmp = None
         self.frame_count = 0
         self.rmap, self.gmap, self.bmap = ntsc_color_map()
         self.frame_event = []
@@ -172,16 +171,7 @@ class Atari800(object):
         self.screen[:,:,0] = self.rmap[self.raw]
         self.screen[:,:,1] = self.gmap[self.raw]
         self.screen[:,:,2] = self.bmap[self.raw]
-
-    def get_bitmap(self):
-        try:
-            import wx
-        except ImportError:
-            return None
-        self.get_frame()
-        image = wx.ImageFromData(self.width, self.height, self.screen.tostring())
-        self.bmp = wx.BitmapFromImage(image)
-        return self.bmp
+        return self.screen
 
     def send_char(self, key_char):
         self.exchange[1:4] = [key_char, 0, 0]
