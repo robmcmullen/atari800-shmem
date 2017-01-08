@@ -38,6 +38,8 @@ static int have_shared = 0;
 
 unsigned char *shared_memory = NULL;
 
+static unsigned char input_snapshot[sizeof(input_template_t)];
+
 static unsigned char fake_shared_memory[SHMEM_TOTAL_SIZE];
 
 unsigned char *SHMEM_DebugGetFakeMemory(void) {
@@ -88,6 +90,17 @@ void SHMEM_ReleaseMemory(void)
 
 input_template_t *SHMEM_GetInputArray(void) {
     return (input_template_t *)&shared_memory[SHMEM_INPUT_OFFSET];
+}
+
+/* Operate on a copy of the input array so that the values aren't changed out
+ from underneath by the front end (which is running in another process)
+*/
+void SHMEM_TakeInputArraySnapshot(void) {
+    memcpy(input_snapshot, &shared_memory[SHMEM_INPUT_OFFSET], sizeof(input_template_t));
+}
+
+input_template_t *SHMEM_GetInputArraySnapshot(void) {
+    return (input_template_t *)&input_snapshot;
 }
 
 #ifdef SOUND

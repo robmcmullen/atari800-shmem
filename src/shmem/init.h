@@ -47,6 +47,8 @@ int SHMEM_UseMemory(unsigned char *, int);
 int SHMEM_AcquireMemory(void);
 void SHMEM_ReleaseMemory(void);
 input_template_t *SHMEM_GetInputArray(void);
+void SHMEM_TakeInputArraySnapshot(void);
+input_template_t *SHMEM_GetInputArraySnapshot(void);
 #ifdef SOUND
 Sound_setup_t *SHMEM_GetSoundArray(void);
 #endif

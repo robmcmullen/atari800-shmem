@@ -46,7 +46,7 @@ int PLATFORM_Keyboard(void)
 	int shiftctrl = 0;
 	int keycode = 0;
 
-	input_template_t *input = SHMEM_GetInputArray();
+	input_template_t *input = SHMEM_GetInputArraySnapshot();
 
 	lastkey = input->keychar;
 	if (lastkey == 0) {
@@ -383,7 +383,7 @@ void SHMEM_Mouse(void)
 {
 	int mouse_mode;
 
-	input_template_t *input = SHMEM_GetInputArray();
+	input_template_t *input = SHMEM_GetInputArraySnapshot();
 
 	mouse_mode = input->mouse_mode;
 
@@ -450,7 +450,7 @@ int SHMEM_Input_Initialise(int *argc, char *argv[])
 
 int PLATFORM_PORT(int num)
 {
-	input_template_t *input = SHMEM_GetInputArray();
+	input_template_t *input = SHMEM_GetInputArraySnapshot();
 
 	if (num == 0) {
 		return (input->joy0 + (input->joy1 << 4)) ^ 0xff;
@@ -463,7 +463,7 @@ int PLATFORM_PORT(int num)
 
 int PLATFORM_TRIG(int num)
 {
-	input_template_t *input = SHMEM_GetInputArray();
+	input_template_t *input = SHMEM_GetInputArraySnapshot();
 
 	switch (num) {
 	case 0:

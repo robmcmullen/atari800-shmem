@@ -136,6 +136,7 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 #endif
 			Util_sleep(0.001);
 		}
+		SHMEM_TakeInputArraySnapshot();
 		INPUT_key_code = PLATFORM_Keyboard();
 		SHMEM_Mouse();
 		Atari800_Frame();
