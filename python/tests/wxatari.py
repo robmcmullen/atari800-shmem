@@ -22,11 +22,9 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-class EmulatorControl(wx.Panel):
-    def __init__(self, parent, emulator, autostart=False):
-        self.parent = parent
+class EmulatorControlBase(object):
+    def __init__(self, emulator, autostart=False):
         self.emulator = emulator
-        wx.Panel.__init__(self, parent, -1, size=(emulator.width, emulator.height))
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.on_timer)
@@ -122,64 +120,19 @@ class EmulatorControl(wx.Panel):
         self.emulator.exchange_input.select = 1 if wx.GetKeyState(wx.WXK_F3) else 0
         self.emulator.exchange_input.start = 1 if wx.GetKeyState(wx.WXK_F4) else 0
 
-    def get_bitmap(self, frame):
-        scaled = self.scale_frame(frame)
-        h, w, _ = scaled.shape
-        image = wx.ImageFromData(w, h, scaled.tostring())
-        bmp = wx.BitmapFromImage(image)
-        return bmp
-
-    def set_scale(self, scale):
-        self.screen_scale = scale
-        self.delay = 5 * scale * scale
-        newdims = np.asarray((self.emulator.height * scale, self.emulator.width * scale))
-        base = np.indices(newdims)
-        d = []
-        d.append(base[0]/self.screen_scale)
-        d.append(base[1]/self.screen_scale)
-        cd = np.array(d)
-        self.raw_scaled_lookup = list(cd)
-        self.stop_timer()
-        self.start_timer(True)
-
-    def scale_frame(self, frame):
-        if self.screen_scale == 1:
-            return frame
-        scaled = frame[self.raw_scaled_lookup]
-        print "panel scale: %d, %s" % (self.screen_scale, scaled.shape)
-        return scaled
-
     def on_size(self,evt):
         if not self.IsDoubleBuffered():
             # make new background buffer
             size  = self.GetClientSizeTuple()
             self._buffer = wx.EmptyBitmap(*size)
 
-    def updateDrawing(self,dc):
-        #dc=wx.BufferedDC(wx.ClientDC(self), self._buffer)
-        frame = self.emulator.get_frame(self.screen_scale)
-        bmp = self.get_bitmap(frame)
-        dc.DrawBitmap(bmp, 0,0, True)
-
-    def on_paint(self, evt):
-        dc=wx.PaintDC(self)
-        self.updateDrawing(dc)
-        self.refreshed=True
-
-    def on_paint_double_buffer(self, evt):
-        dc=wx.BufferedPaintDC(self,self._buffer)
-        self.updateDrawing(dc)
-        self.refreshed=True
+    def show_frame(self):
+        raise NotImplementedError
 
     def on_timer(self, evt):
         if self.timer.IsRunning():
             if self.emulator.is_frame_ready():
-                if self.forceupdate:
-                    dc = wx.ClientDC(self)
-                    self.updateDrawing(dc)
-                else:
-                    #self.updateDrawing()
-                    self.Refresh()
+                self.show_frame()
                 self.emulator.next_frame()
             self.process_key_state()
         evt.Skip()
@@ -212,6 +165,63 @@ class EmulatorControl(wx.Panel):
 
     def end_emulation(self):
         self.join_process()
+
+
+class EmulatorControl(wx.Panel, EmulatorControlBase):
+    def __init__(self, parent, emulator, autostart=False):
+        wx.Panel.__init__(self, parent, -1, size=(emulator.width, emulator.height))
+        EmulatorControlBase.__init__(self, emulator, autostart)
+
+    def get_bitmap(self, frame):
+        scaled = self.scale_frame(frame)
+        h, w, _ = scaled.shape
+        image = wx.ImageFromData(w, h, scaled.tostring())
+        bmp = wx.BitmapFromImage(image)
+        return bmp
+
+    def set_scale(self, scale):
+        self.screen_scale = scale
+        self.delay = 5 * scale * scale
+        newdims = np.asarray((self.emulator.height * scale, self.emulator.width * scale))
+        base = np.indices(newdims)
+        d = []
+        d.append(base[0]/self.screen_scale)
+        d.append(base[1]/self.screen_scale)
+        cd = np.array(d)
+        self.raw_scaled_lookup = list(cd)
+        self.stop_timer()
+        self.start_timer(True)
+
+    def scale_frame(self, frame):
+        if self.screen_scale == 1:
+            return frame
+        scaled = frame[self.raw_scaled_lookup]
+        print "panel scale: %d, %s" % (self.screen_scale, scaled.shape)
+        return scaled
+
+    def show_frame(self):
+        if self.forceupdate:
+            dc = wx.ClientDC(self)
+            self.updateDrawing(dc)
+        else:
+            #self.updateDrawing()
+            self.Refresh()
+
+    def updateDrawing(self,dc):
+        #dc=wx.BufferedDC(wx.ClientDC(self), self._buffer)
+        frame = self.emulator.get_frame(self.screen_scale)
+        bmp = self.get_bitmap(frame)
+        dc.DrawBitmap(bmp, 0,0, True)
+
+    def on_paint(self, evt):
+        dc=wx.PaintDC(self)
+        self.updateDrawing(dc)
+        self.refreshed=True
+
+    def on_paint_double_buffer(self, evt):
+        dc=wx.BufferedPaintDC(self,self._buffer)
+        self.updateDrawing(dc)
+        self.refreshed=True
 
 
 # Not running inside the wxPython demo, so include the same basic
