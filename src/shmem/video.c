@@ -77,7 +77,7 @@ void PLATFORM_DisplayScreen(void)
 void SHMEM_DebugVideo(unsigned char *mem) {
 	int x, y;
 
-	mem += (336 * 24) + 640;
+	mem += (336 * 24) + SHMEM_VIDEO_OFFSET;
 	for (y = 0; y < 16; y++) {
 		for (x = 8; x < 140; x++) {
 			/*printf(" %02x", src[x]);*/

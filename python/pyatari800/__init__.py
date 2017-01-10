@@ -10,7 +10,7 @@ from _metadata import __version__
 debug_frames = False
 
 def debug_video(mem):
-    offset = 336*24 + 640
+    offset = 336*24 + 128
     for y in range(32):
         print "%x:" % offset,
         for x in range(8,60):
@@ -100,7 +100,7 @@ class Atari800(object):
         self.process = None
         self.width = 336
         self.height = 240
-        self.raw = np.frombuffer(self.exchange, dtype=np.uint8, count=336*240, offset=640)
+        self.raw = np.frombuffer(self.exchange, dtype=np.uint8, count=336*240, offset=128)
         self.raw.shape = (240, 336)
         self.frame_count = 0
         self.rmap, self.gmap, self.bmap = ntsc_color_map()
