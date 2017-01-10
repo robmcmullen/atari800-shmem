@@ -129,10 +129,16 @@ class EmulatorControlBase(object):
     def show_frame(self):
         raise NotImplementedError
 
+    def show_audio(self):
+        import binascii
+        a = binascii.hexlify(self.emulator.audio)
+        print a
+
     def on_timer(self, evt):
         if self.timer.IsRunning():
             if self.emulator.is_frame_ready():
                 self.show_frame()
+                self.show_audio()
                 self.emulator.next_frame()
             self.process_key_state()
         evt.Skip()

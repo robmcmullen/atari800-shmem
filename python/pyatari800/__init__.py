@@ -102,6 +102,7 @@ class Atari800(object):
         self.height = 240
         self.raw = np.frombuffer(self.exchange, dtype=np.uint8, count=336*240, offset=128)
         self.raw.shape = (240, 336)
+        self.audio = np.frombuffer(self.exchange, dtype=np.uint8, count=2048, offset=128 + np.alen(self.raw))
         self.frame_count = 0
         self.rmap, self.gmap, self.bmap = ntsc_color_map()
         self.frame_event = []

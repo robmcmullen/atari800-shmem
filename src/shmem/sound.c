@@ -26,6 +26,7 @@
 #include "atari.h"
 #include "log.h"
 #include "platform.h"
+#include "init.h"
 #include "sound.h"
 
 static unsigned int hw_buffer_size = 0;
@@ -74,4 +75,9 @@ unsigned int PLATFORM_SoundAvailable(void)
 
 void PLATFORM_SoundWrite(UBYTE const *buffer, unsigned int size)
 {
+	unsigned char *dest;
+
+	printf("copying %d bytes\n", size);
+	dest = SHMEM_GetSoundArray();
+	memcpy(dest, buffer, size);
 }
