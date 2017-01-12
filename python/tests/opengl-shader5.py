@@ -71,21 +71,22 @@ class GLProgram(object):
         gl.glUseProgram(0)
 
 
-def loadTexture(self):
-    image = Image.open("flicky.png")
-    ix = image.size[0]
-    iy = image.size[1]
-    print ix, iy
-    w, h = image.size
-    data = image.tobytes("raw", "RGBX", 0, -1)
-
-    w = 16
-    h = 16
-    data = np.empty((256, 4), dtype=np.uint8)
-    data[:,0] = np.arange(256, dtype=np.uint8)
-    data[:,1] = data[:,0]
-    data[:,2] = data[:,0]
-    data[:,3] = 256
+def load_texture(filename=None):
+    if filename is not None:
+        image = Image.open(filename)
+        ix = image.size[0]
+        iy = image.size[1]
+        print ix, iy
+        w, h = image.size
+        data = image.tobytes("raw", "RGBX", 0, -1)
+    else:
+        w = 16
+        h = 16
+        data = np.empty((256, 4), dtype=np.uint8)
+        data[:,0] = np.arange(256, dtype=np.uint8)
+        data[:,1] = data[:,0]
+        data[:,2] = data[:,0]
+        data[:,3] = 256
 
     # generate a texture id, make it current
     texture = gl.glGenTextures(1)
@@ -198,7 +199,7 @@ class Canvas(glcanvas.GLCanvas):
             gl.GL_STATIC_DRAW)
 
         # load texture and assign texture unit for shaders
-        self.sample_texture = loadTexture('flicky.png')
+        self.sample_texture = load_texture()
         self.tex_uniform = gl.glGetUniformLocation(self.shader_prog.prog, 'tex')
 
         # load palette and assign texture unit for shaders
@@ -219,6 +220,8 @@ class Canvas(glcanvas.GLCanvas):
         # Finished
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindVertexArray(0)
+
+        self.finished_init = True
 
     def on_size(self, event):
         """called when window is repainted """
@@ -252,16 +255,22 @@ class Canvas(glcanvas.GLCanvas):
             # Activate array
             gl.glBindVertexArray(self.vao_id)
 
+            # FIXME: Why does the following work? tex_uniform is 1,
+            # palette_uniform is 0, but I have to set the uniform for
+            # tex_uniform to 0 and the uniform for palette_uniform to 1.
+            # Obviously I'm not understanding something.
+
             # Activate texture
-            # gl.glActiveTexture(gl.GL_TEXTURE0)
-            # gl.glBindTexture(gl.GL_TEXTURE_2D, self.sample_texture)
-            # gl.glUniform1i(self.tex_uniform, 0)
+            print self.tex_uniform, self.palette_uniform, self.sample_texture, self.palette_texture, gl.GL_TEXTURE_2D, gl.GL_TEXTURE_BUFFER
+            gl.glActiveTexture(gl.GL_TEXTURE0 + self.tex_uniform)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self.sample_texture)
+            gl.glUniform1i(self.tex_uniform, 0)
 
             # Activate palette texture
-            gl.glActiveTexture(gl.GL_TEXTURE1)
+            gl.glActiveTexture(gl.GL_TEXTURE0 + self.palette_uniform)
             gl.glBindTexture(gl.GL_TEXTURE_BUFFER, self.palette_texture)
- #           gl.glTexBuffer(gl.GL_TEXTURE_BUFFER, gl.GL_RGBA32F, self.palette_id)
-            gl.glUniform1i(self.palette_uniform, 3)
+            gl.glTexBuffer(gl.GL_TEXTURE_BUFFER, gl.GL_RGBA32F, self.palette_id)
+            gl.glUniform1i(self.palette_uniform, 1)
 
             # # Activate array
             # gl.glBindVertexArray(self.vao_id)
