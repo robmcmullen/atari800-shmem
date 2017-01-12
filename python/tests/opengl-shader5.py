@@ -14,7 +14,6 @@ import numpy as np
 
 import OpenGL.GL as gl
 from OpenGL import GLU
-from OpenGL.GL import shaders
 from OpenGL.arrays import vbo
 
 import PIL
@@ -26,22 +25,42 @@ from wx import glcanvas
 
 class GLProgram(object):
     def __init__(self, vertex, fragment):
-        self.vertex_shader = self.compile(vertex, gl.GL_VERTEX_SHADER)
-        self.fragment_shader = self.compile(fragment, gl.GL_FRAGMENT_SHADER)
-        self.prog = self.link(self.vertex_shader, self.fragment_shader)
+        vertex_shader = self.compile(vertex, gl.GL_VERTEX_SHADER)
+        fragment_shader = self.compile(fragment, gl.GL_FRAGMENT_SHADER)
+        self.prog = self.link(vertex_shader, fragment_shader)
 
-    def compile(self, src, type):
-        try:
-            shader = shaders.compileShader(src, type)
-        except (gl.GLError, RuntimeError) as err:
-            print 'shader compile error', err
+    def compile(self, src, shader_type):
+        shader = gl.glCreateShader(shader_type)
+        gl.glShaderSource(shader, src)
+        gl.glCompileShader(shader)
+        result = gl.glGetShaderiv(shader, gl.GL_COMPILE_STATUS)
+        if not(result):
+            # TODO: this will be wrong if the user has
+            # disabled traditional unpacking array support.
+            raise RuntimeError(
+                """Shader compile failure (%s): %s"""%(
+                    result,
+                    gl.glGetShaderInfoLog(shader),
+                ),
+                src,
+                shader_type,
+            )
         return shader
 
     def link(self, *shader_objs):
-        try:
-            prog = shaders.compileProgram(*shader_objs)
-        except (gl.GLError, RuntimeError) as err:
-            print 'shader link error', err
+        prog = gl.glCreateProgram()
+        for shader in shader_objs:
+            gl.glAttachShader(prog, shader)
+        gl.glLinkProgram(prog)
+        link_status = gl.glGetProgramiv(prog, gl.GL_LINK_STATUS)
+        if link_status == gl.GL_FALSE:
+            raise RuntimeError(
+                """Link failure (%s): %s"""%(
+                link_status,
+                gl.glGetProgramInfoLog(prog),
+            ))
+        for shader in shader_objs:
+            gl.glDeleteShader(shader)
         return prog
 
     def __enter__(self):
