@@ -259,9 +259,12 @@ class Canvas(glcanvas.GLCanvas):
             # palette_uniform is 0, but I have to set the uniform for
             # tex_uniform to 0 and the uniform for palette_uniform to 1.
             # Obviously I'm not understanding something.
+            #
+            # See: http://stackoverflow.com/questions/26622204
+            # https://www.opengl.org/discussion_boards/showthread.php/174926-when-to-use-glActiveTexture
 
             # Activate texture
-            print self.tex_uniform, self.palette_uniform, self.sample_texture, self.palette_texture, gl.GL_TEXTURE_2D, gl.GL_TEXTURE_BUFFER
+            print self.tex_uniform, self.palette_uniform, self.sample_texture, self.palette_id
             gl.glActiveTexture(gl.GL_TEXTURE0 + self.tex_uniform)
             gl.glBindTexture(gl.GL_TEXTURE_2D, self.sample_texture)
             gl.glUniform1i(self.tex_uniform, 0)
