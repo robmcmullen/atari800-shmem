@@ -8,7 +8,7 @@ from OpenGL.arrays import vbo
 from OpenGL.GL import shaders
 
 import wx
-from wx.glcanvas import GLCanvas
+from wx import glcanvas
 
 class GLProgram(object):
     def __init__(self, vertex, fragment):
@@ -37,17 +37,18 @@ class GLProgram(object):
         shaders.glUseProgram(0)
 
 
-class Canvas(GLCanvas):
+class Canvas(glcanvas.GLCanvas):
 
     def __init__(self, parent):
         """create the canvas """
         super(Canvas, self).__init__(parent)
+        self.context = glcanvas.GLContext(self)
         self.texture = None
         self.vbo = vbo.VBO(np.array( [ [ 0, 1, 0 ], [ -1,-1, 0 ], [ 1,-1, 0 ], [ 2,-1, 0 ], [ 4,-1, 0 ], [ 4, 1, 0 ], [ 2,-1, 0 ], [ 4, 1, 0 ], [ 2, 1, 0 ], ], dtype=np.float32))
 
         self.shader_prog = None
         # execute self.onPaint whenever the parent frame is repainted
-        wx.EVT_PAINT(self, self.onPaint)
+        self.Bind(wx.EVT_PAINT, self.onPaint)
 
     vertex_shader_src = """
 #version 120
@@ -68,7 +69,7 @@ void main() {
         """
 
         # make the OpenGL context associated with this canvas the current one
-        self.SetCurrent()
+        self.SetCurrent(self.context)
 
         self.shader_prog = GLProgram(self.vertex_shader_src, self.fragment_shader_src)
         gl.glClearColor(0,0,0,0)
@@ -84,7 +85,7 @@ void main() {
         """draw function """
 
         # make the OpenGL context associated with this canvas the current one
-        self.SetCurrent()
+        self.SetCurrent(self.context)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
         with self.shader_prog:
