@@ -261,6 +261,18 @@ class TextureCanvas(glcanvas.GLCanvas):
     def on_size(self, event):
         """called when window is repainted """
         # make sure we have a texture to draw
+        w, h = self.GetClientSizeTuple()
+        a = 1.0 * w / h
+        xspan = 1
+        yspan = 1
+        if a > 1:
+            xspan *= a
+        else:
+            yspan = xspan/a
+
+        gl.glOrtho(-1*xspan, xspan, -1*yspan, yspan, -1, 1)
+        gl.glViewport(0, 0, w, h);
+
         if self.finished_init:
             self.on_draw()
 
