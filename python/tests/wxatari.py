@@ -22,7 +22,7 @@ if module_dir not in sys.path:
 import pyatari800
 from pyatari800.akey import *
 from pyatari800.shmem import *
-from texture_canvas import TextureCanvas
+from texture_canvas import GLSLTextureCanvas, LegacyTextureCanvas
 
 import logging
 logging.basicConfig(level=logging.WARNING)
@@ -238,18 +238,14 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
         self.refreshed=True
 
 
-class OpenGLEmulatorControl(TextureCanvas, EmulatorControlBase):
-    def __init__(self, parent, emulator, autostart=False):
-        TextureCanvas.__init__(self, parent, -1, size=(3*emulator.width, 3*emulator.height))
-        EmulatorControlBase.__init__(self, emulator, autostart)
-
+class OpenGLEmulatorMixin(object):
     def bind_events(self):
         pass
 
-    def calc_texture_data(self, raw=None):
+    def get_raw_texture_data(self, raw=None):
+        print "RAW!"
         raw = np.flipud(self.emulator.raw.reshape((240, 336)))
-        frame = TextureCanvas.calc_texture_data(self, raw)
-        return frame
+        return raw
 
     def show_frame(self):
         frame = self.calc_texture_data()
@@ -272,6 +268,18 @@ class OpenGLEmulatorControl(TextureCanvas, EmulatorControlBase):
         self.show_frame()
 
     on_paint_double_buffer = on_paint
+
+
+class OpenGLEmulatorControl(OpenGLEmulatorMixin, LegacyTextureCanvas, EmulatorControlBase):
+    def __init__(self, parent, emulator, autostart=False):
+        LegacyTextureCanvas.__init__(self, parent, -1, size=(3*emulator.width, 3*emulator.height))
+        EmulatorControlBase.__init__(self, emulator, autostart)
+
+
+class GLSLEmulatorControl(OpenGLEmulatorMixin, GLSLTextureCanvas, EmulatorControlBase):
+    def __init__(self, parent, emulator, autostart=False):
+        GLSLTextureCanvas.__init__(self, parent, -1, size=(3*emulator.width, 3*emulator.height))
+        EmulatorControlBase.__init__(self, emulator, autostart)
 
 
 # Not running inside the wxPython demo, so include the same basic
@@ -319,7 +327,9 @@ class EmulatorApp(wx.App):
 
         self.emulator = pyatari800.Atari800(self.parsed_args)
         self.emulator.multiprocess()
-        if self.options.opengl and HAS_OPENGL:
+        if self.options.glsl and not self.options.opengl and HAS_OPENGL:
+            control = GLSLEmulatorControl
+        elif self.options.opengl and HAS_OPENGL:
             control = OpenGLEmulatorControl
         else:
             control = EmulatorControl
@@ -366,6 +376,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Atari800 WX Demo')
     parser.add_argument("--bitmap", action="store_false", dest="opengl", default=True, help="Use bitmap scaling instead of OpenGL")
     parser.add_argument("--opengl", action="store_true", dest="opengl", default=True, help="Use OpenGL scaling")
+    parser.add_argument("--glsl", action="store_true", dest="glsl", default=False, help="Use GLSL scaling")
     EmulatorApp.options, EmulatorApp.parsed_args = parser.parse_known_args()
     app = EmulatorApp()
     app.MainLoop()

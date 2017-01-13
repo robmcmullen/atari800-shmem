@@ -116,13 +116,13 @@ NTSC = np.array([
 #NTSC /= 255.0
 print NTSC
 
-class TextureCanvas(glcanvas.GLCanvas):
+class GLSLTextureCanvas(glcanvas.GLCanvas):
     def __init__(self, parent, *args, **kwargs):
         """create the canvas """
         kwargs['attribList'] = (glcanvas.WX_GL_RGBA,
                                 glcanvas.WX_GL_DOUBLEBUFFER,
                                 glcanvas.WX_GL_MIN_ALPHA, 8, )
-        super(TextureCanvas, self).__init__(parent, *args, **kwargs)
+        glcanvas.GLCanvas.__init__(self, parent, *args, **kwargs)
         self.context = glcanvas.GLContext(self)
 
         self.shader_prog = None
@@ -191,13 +191,17 @@ class TextureCanvas(glcanvas.GLCanvas):
 
         self.finished_init = True
 
-    def calc_texture_data(self, raw=None):
+    def get_raw_texture_data(self, raw=None):
         if raw is None:
             w = 16
             h = 16
             raw = np.empty((256,), dtype=np.uint8)
             raw[:] = np.arange(256, dtype=np.uint8)
             raw = raw.reshape((h, w))
+        return raw
+
+    def calc_texture_data(self, raw=None):
+        raw = self.get_raw_texture_data(raw)
         h, w = raw.shape
         data = np.empty((h * w, 4), dtype=np.uint8)
         src = raw.reshape((h * w))
@@ -329,12 +333,14 @@ class TextureCanvas(glcanvas.GLCanvas):
             gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
 
 
+class LegacyTextureCanvas(GLSLTextureCanvas):
+    pass
 
 
 def run():
     app = wx.App()
     fr = wx.Frame(None, size=(640, 480), title='wxPython OpenGL programmable pipeline demo')
-    canv = TextureCanvas(fr)
+    canv = GLSLTextureCanvas(fr)
     fr.Show()
     app.MainLoop()
     return 0
