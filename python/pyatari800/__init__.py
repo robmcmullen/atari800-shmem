@@ -168,7 +168,7 @@ class Atari800(object):
                 still_waiting.append((count, callback))
         self.frame_event = still_waiting
 
-    def set_scale(self, scale):
+    def set_scale(self, scale=1):
         self.screen_scale = scale
         newdims = np.asarray((self.height * scale, self.width * scale))
         base = np.indices(newdims)

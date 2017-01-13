@@ -5,6 +5,13 @@ import sys
 import time
 import wx
 import wx.lib.newevent
+try:
+    import wx.glcanvas as glcanvas
+    import OpenGL.GL as gl
+    HAS_OPENGL = True
+except ImportError:
+    HAS_OPENGL = False
+
 import numpy as np
 
 # Include pyatari directory so that modules can be imported normally
@@ -15,6 +22,7 @@ if module_dir not in sys.path:
 import pyatari800
 from pyatari800.akey import *
 from pyatari800.shmem import *
+from texture_canvas import TextureCanvas
 
 import logging
 logging.basicConfig(level=logging.WARNING)
@@ -132,7 +140,7 @@ class EmulatorControlBase(object):
     def show_audio(self):
         import binascii
         a = binascii.hexlify(self.emulator.audio)
-        print a
+        #print a
 
     def on_timer(self, evt):
         if self.timer.IsRunning():
@@ -230,10 +238,47 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
         self.refreshed=True
 
 
+class OpenGLEmulatorControl(TextureCanvas, EmulatorControlBase):
+    def __init__(self, parent, emulator, autostart=False):
+        TextureCanvas.__init__(self, parent, -1, size=(3*emulator.width, 3*emulator.height))
+        EmulatorControlBase.__init__(self, emulator, autostart)
+
+    def bind_events(self):
+        pass
+
+    def calc_texture_data(self, raw=None):
+        raw = np.flipud(self.emulator.raw.reshape((240, 336)))
+        frame = TextureCanvas.calc_texture_data(self, raw)
+        return frame
+
+    def show_frame(self):
+        frame = self.calc_texture_data()
+        if self.emulator.frame_count > 50:
+            try:
+                print "here", self.display_texture
+                self.update_texture(self.display_texture, frame)
+            except Exception, e:
+                import traceback
+
+                print traceback.format_exc()
+                sys.exit()
+            self.on_draw()
+
+    def on_paint(self, evt):
+        print "here"
+        if not self.finished_init:
+            print "here1"
+            self.init_context()
+        self.show_frame()
+
+    on_paint_double_buffer = on_paint
+
+
 # Not running inside the wxPython demo, so include the same basic
 # framework.
 class EmulatorApp(wx.App):
     parsed_args = []
+    options = {}
 
     def OnInit(self):
         frame = wx.Frame(None, -1, "wxPython atari800 test", pos=(50,50),
@@ -274,8 +319,12 @@ class EmulatorApp(wx.App):
 
         self.emulator = pyatari800.Atari800(self.parsed_args)
         self.emulator.multiprocess()
-        self.emulator_panel = EmulatorControl(frame, self.emulator, autostart=True)
-        frame.SetSize((450, 350))
+        if self.options.opengl and HAS_OPENGL:
+            control = OpenGLEmulatorControl
+        else:
+            control = EmulatorControl
+        self.emulator_panel = control(frame, self.emulator, autostart=True)
+        frame.SetSize((800, 600))
         self.emulator_panel.SetFocus()
         self.SetTopWindow(frame)
         self.frame = frame
@@ -315,6 +364,8 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Atari800 WX Demo')
-    EmulatorApp.parsed_args = parser.parse_known_args()[1]
+    parser.add_argument("--bitmap", action="store_false", dest="opengl", default=True, help="Use bitmap scaling instead of OpenGL")
+    parser.add_argument("--opengl", action="store_true", dest="opengl", default=True, help="Use OpenGL scaling")
+    EmulatorApp.options, EmulatorApp.parsed_args = parser.parse_known_args()
     app = EmulatorApp()
     app.MainLoop()

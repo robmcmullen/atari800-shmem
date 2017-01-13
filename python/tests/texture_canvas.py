@@ -14,6 +14,7 @@ import numpy as np
 
 import OpenGL.GL as gl
 from OpenGL import GLU
+from OpenGL.GL import shaders
 from OpenGL.arrays import vbo
 
 import PIL
@@ -71,44 +72,6 @@ class GLProgram(object):
         gl.glUseProgram(0)
 
 
-def load_texture(filename=None):
-    if filename is not None:
-        image = Image.open(filename)
-        ix = image.size[0]
-        iy = image.size[1]
-        print ix, iy
-        w, h = image.size
-        data = image.tobytes("raw", "RGBX", 0, -1)
-    else:
-        w = 16
-        h = 16
-        data = np.empty((256, 4), dtype=np.uint8)
-        data[:,0] = np.arange(256, dtype=np.uint8)
-        data[:,1] = data[:,0]
-        data[:,2] = data[:,0]
-        data[:,3] = 256
-
-    # generate a texture id, make it current
-    texture = gl.glGenTextures(1)
-    gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
-
-    # texture mode and parameters controlling wrapping and scaling
-    gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_MODULATE)
-    gl.glTexParameterf(
-        gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
-    gl.glTexParameterf(
-        gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
-    gl.glTexParameterf(
-        gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
-    gl.glTexParameterf(
-        gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
-
-    # map the image data to the texture. note that if the input
-    # type is GL_FLOAT, the values must be in the range [0..1]
-    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, w, h, 0,
-                    gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, data)
-    return texture
-
 
 vertexShader = """
 #version 330
@@ -126,10 +89,10 @@ void main()
 """
 
 fragmentShader = """
-#version 420
+#version 330
 
-layout (binding=1) uniform sampler2D tex;
-layout (binding=0) uniform samplerBuffer palette;
+uniform samplerBuffer palette;
+uniform sampler2D tex;
 
 in vec2 theCoords;
 
@@ -140,8 +103,11 @@ void main()
     vec4 pcolor;
 
     out_color = texture(tex, theCoords.st);
+    //out_color = vec4(theCoords.st, 0, 255);
     pcolor = normalize(texelFetch(palette, int(out_color.r * 255)));
-    out_color = pcolor;
+    // for some reason, the output color is half as bright as it should be
+    out_color = vec4(pcolor.r * 2, pcolor.g*2, pcolor.b*2, 1.0);
+    //out_color = vec4(pcolor.r, pcolor.g, pcolor.b, 1.0);
 }
 """
 
@@ -150,22 +116,25 @@ NTSC = np.array([
 #NTSC /= 255.0
 print NTSC
 
-class Canvas(glcanvas.GLCanvas):
+class TextureCanvas(glcanvas.GLCanvas):
     def __init__(self, parent, *args, **kwargs):
         """create the canvas """
         kwargs['attribList'] = (glcanvas.WX_GL_RGBA,
                                 glcanvas.WX_GL_DOUBLEBUFFER,
                                 glcanvas.WX_GL_MIN_ALPHA, 8, )
-        super(Canvas, self).__init__(parent, *args, **kwargs)
+        super(TextureCanvas, self).__init__(parent, *args, **kwargs)
         self.context = glcanvas.GLContext(self)
 
         self.shader_prog = None
         self.vao_id = None
         self.vbo_id = None
-        self.sample_texture = None
+        self.display_texture = None
         self.tex_uniform = None
 
         self.finished_init = False
+        self.bind_events()
+
+    def bind_events(self):
         # execute self.onPaint whenever the parent frame is repainted
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_SIZE, self.on_size)
@@ -199,9 +168,8 @@ class Canvas(glcanvas.GLCanvas):
             gl.GL_STATIC_DRAW)
 
         # load texture and assign texture unit for shaders
-        self.sample_texture = load_texture()
+        self.display_texture = self.load_texture()
         self.tex_uniform = gl.glGetUniformLocation(self.shader_prog.prog, 'tex')
-
         # load palette and assign texture unit for shaders
         self.palette_id = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_TEXTURE_BUFFER, self.palette_id)
@@ -222,6 +190,73 @@ class Canvas(glcanvas.GLCanvas):
         gl.glBindVertexArray(0)
 
         self.finished_init = True
+
+    def calc_texture_data(self, raw=None):
+        if raw is None:
+            w = 16
+            h = 16
+            raw = np.empty((256,), dtype=np.uint8)
+            raw[:] = np.arange(256, dtype=np.uint8)
+            raw = raw.reshape((h, w))
+        h, w = raw.shape
+        data = np.empty((h * w, 4), dtype=np.uint8)
+        src = raw.reshape((h * w))
+        data[:,0] = src[:]
+        data[:,1] = src[:]
+        data[:,2] = src[:]
+        data[:,3] = 255
+        return data.reshape((h, w, 4))
+
+    def load_texture(self, filename=None):
+        if filename is not None:
+            image = Image.open(filename)
+            ix = image.size[0]
+            iy = image.size[1]
+            print ix, iy
+            w, h = image.size
+            data = image.tobytes("raw", "RGBX", 0, -1)
+        else:
+            data = self.calc_texture_data()
+            h, w, _ = data.shape
+
+        # generate a texture id, make it current
+        texture = gl.glGenTextures(1)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
+        print "IN LOAD TEXTURE", texture, data
+        if texture is None:
+            sys.exit()
+
+        # texture mode and parameters controlling wrapping and scaling
+        gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE)
+        gl.glTexParameterf(
+            gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
+        gl.glTexParameterf(
+            gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
+        gl.glTexParameterf(
+            gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+        gl.glTexParameterf(
+            gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, w, h, 0,
+            gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, data)
+        # gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, 0, 0, w, h,
+        #                 gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, data)
+
+        self.update_texture(texture, data)
+        return texture
+
+    def update_texture(self, texture, data):
+        # map the image data to the texture. note that if the input
+        # type is GL_FLOAT, the values must be in the range [0..1]
+        print texture
+        # if True:
+        #     return
+        gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
+        h, w, _ = data.shape
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, w, h, 0,
+            gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, data)
+        # gl.glTexSubImage2D(gl.GL_TEXTURE_2D, 0, 0, 0, w, h,
+        #     gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, data)
+        #gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
     def on_size(self, event):
         """called when window is repainted """
@@ -259,17 +294,20 @@ class Canvas(glcanvas.GLCanvas):
             # palette_uniform is 0, but I have to set the uniform for
             # tex_uniform to 0 and the uniform for palette_uniform to 1.
             # Obviously I'm not understanding something.
+            #
+            # See: http://stackoverflow.com/questions/26622204
+            # https://www.opengl.org/discussion_boards/showthread.php/174926-when-to-use-glActiveTexture
 
             # Activate texture
-            print self.tex_uniform, self.palette_uniform, self.sample_texture, self.palette_texture, gl.GL_TEXTURE_2D, gl.GL_TEXTURE_BUFFER
+            print self.tex_uniform, self.palette_uniform, self.display_texture, self.palette_id
             gl.glActiveTexture(gl.GL_TEXTURE0 + self.tex_uniform)
-            gl.glBindTexture(gl.GL_TEXTURE_2D, self.sample_texture)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self.display_texture)
             gl.glUniform1i(self.tex_uniform, 0)
 
             # Activate palette texture
             gl.glActiveTexture(gl.GL_TEXTURE0 + self.palette_uniform)
             gl.glBindTexture(gl.GL_TEXTURE_BUFFER, self.palette_texture)
-            gl.glTexBuffer(gl.GL_TEXTURE_BUFFER, gl.GL_RGBA32F, self.palette_id)
+            gl.glTexBuffer(gl.GL_TEXTURE_BUFFER, gl.GL_RGBA8, self.palette_id)
             gl.glUniform1i(self.palette_uniform, 1)
 
             # # Activate array
@@ -284,7 +322,7 @@ class Canvas(glcanvas.GLCanvas):
 def run():
     app = wx.App()
     fr = wx.Frame(None, size=(640, 480), title='wxPython OpenGL programmable pipeline demo')
-    canv = Canvas(fr)
+    canv = TextureCanvas(fr)
     fr.Show()
     app.MainLoop()
     return 0
