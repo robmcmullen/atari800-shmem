@@ -249,16 +249,14 @@ class OpenGLEmulatorMixin(object):
 
     def show_frame(self):
         frame = self.calc_texture_data()
-        if self.emulator.frame_count > 50:
-            try:
-                print "here", self.display_texture
-                self.update_texture(self.display_texture, frame)
-            except Exception, e:
-                import traceback
+        try:
+            self.update_texture(self.display_texture, frame)
+        except Exception, e:
+            import traceback
 
-                print traceback.format_exc()
-                sys.exit()
-            self.on_draw()
+            print traceback.format_exc()
+            sys.exit()
+        self.on_draw()
 
     def on_paint(self, evt):
         print "here"
@@ -274,6 +272,11 @@ class OpenGLEmulatorControl(OpenGLEmulatorMixin, LegacyTextureCanvas, EmulatorCo
     def __init__(self, parent, emulator, autostart=False):
         LegacyTextureCanvas.__init__(self, parent, -1, size=(3*emulator.width, 3*emulator.height))
         EmulatorControlBase.__init__(self, emulator, autostart)
+
+    def get_raw_texture_data(self, raw=None):
+        raw = np.flipud(self.emulator.get_frame())
+        print "raw data for legacy version:", raw.shape
+        return raw
 
 
 class GLSLEmulatorControl(OpenGLEmulatorMixin, GLSLTextureCanvas, EmulatorControlBase):
@@ -327,7 +330,7 @@ class EmulatorApp(wx.App):
 
         self.emulator = pyatari800.Atari800(self.parsed_args)
         self.emulator.multiprocess()
-        if self.options.glsl and not self.options.opengl and HAS_OPENGL:
+        if self.options.glsl and HAS_OPENGL:
             control = GLSLEmulatorControl
         elif self.options.opengl and HAS_OPENGL:
             control = OpenGLEmulatorControl

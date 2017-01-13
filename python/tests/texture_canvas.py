@@ -125,6 +125,13 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
         glcanvas.GLCanvas.__init__(self, parent, *args, **kwargs)
         self.context = glcanvas.GLContext(self)
 
+        self.vertex_data = np.array([
+            # X,  Y,   U, V
+            (-1, -1,   0, 0),
+            ( 1, -1,   1, 0),
+            (-1,  1,   0, 1),
+            ( 1,  1,   1, 1)
+        ], dtype=np.float32)
         self.shader_prog = None
         self.vao_id = None
         self.vbo_id = None
@@ -139,6 +146,17 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_SIZE, self.on_size)
 
+    def init_shader(self):
+        self.shader_prog = GLProgram(vertexShader, fragmentShader)
+
+        # load texture and assign texture unit for shaders
+        self.tex_uniform = gl.glGetUniformLocation(self.shader_prog.prog, 'tex')
+        self.palette_uniform = gl.glGetUniformLocation(self.shader_prog.prog, 'palette')
+
+        # # load texture and assign texture unit for shaders
+        # self.tex_uniform = gl.glGetUniformLocation(self.shader_prog.prog, 'tex')
+        # self.palette_uniform = gl.glGetUniformLocation(self.shader_prog.prog, 'palette')
+
     def init_context(self):
         """init the texture - this has to happen after an OpenGL context
         has been created
@@ -147,15 +165,7 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
         # make the OpenGL context associated with this canvas the current one
         self.SetCurrent(self.context)
 
-        self.shader_prog = GLProgram(vertexShader, fragmentShader)
-
-        vertexData = np.array([
-            # X,  Y,   U, V
-            (-1, -1,   0, 0),
-            ( 1, -1,   1, 0),
-            (-1,  1,   0, 1),
-            ( 1,  1,   1, 1)
-        ], dtype=np.float32)
+        self.init_shader()
 
         # Core OpenGL requires that at least one OpenGL vertex array be bound
         self.vao_id = gl.glGenVertexArrays(1)
@@ -164,12 +174,12 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
         # Need self.vbo_id for triangle vertices and texture UV coordinates
         self.vbo_id = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo_id)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, vertexData.nbytes, vertexData,
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.vertex_data.nbytes, self.vertex_data,
             gl.GL_STATIC_DRAW)
 
         # load texture and assign texture unit for shaders
         self.display_texture = self.load_texture()
-        self.tex_uniform = gl.glGetUniformLocation(self.shader_prog.prog, 'tex')
+
         # load palette and assign texture unit for shaders
         self.palette_id = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_TEXTURE_BUFFER, self.palette_id)
@@ -177,7 +187,6 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
             gl.GL_STATIC_DRAW)
         gl.glTexBuffer(gl.GL_TEXTURE_BUFFER, gl.GL_RGBA8, self.palette_id)
         self.palette_texture = gl.glGenTextures(1)
-        self.palette_uniform = gl.glGetUniformLocation(self.shader_prog.prog, 'palette')
 
         gl.glEnableVertexAttribArray(0)
         gl.glEnableVertexAttribArray(1)
@@ -212,21 +221,23 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
         return data.reshape((h, w, 4))
 
     def load_texture(self, filename=None):
-        if filename is not None:
+        if filename is not None or False:
+            filename = "flicky.png"
             image = Image.open(filename)
             ix = image.size[0]
             iy = image.size[1]
             print ix, iy
             w, h = image.size
+            rgba = 4
             data = image.tobytes("raw", "RGBX", 0, -1)
         else:
             data = self.calc_texture_data()
-            h, w, _ = data.shape
+            h, w, rgba = data.shape
 
         # generate a texture id, make it current
         texture = gl.glGenTextures(1)
         gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
-        print "IN LOAD TEXTURE", texture, data
+        print "IN LOAD TEXTURE", texture, data.shape
         if texture is None:
             sys.exit()
 
@@ -240,7 +251,7 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
             gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
         gl.glTexParameterf(
             gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
-        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, w, h, 0,
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, rgba, w, h, 0,
             gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, data)
         # gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, 0, 0, w, h,
         #                 gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, data)
@@ -251,12 +262,12 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
     def update_texture(self, texture, data):
         # map the image data to the texture. note that if the input
         # type is GL_FLOAT, the values must be in the range [0..1]
-        print texture
+        print texture, data.shape
         # if True:
         #     return
         gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
-        h, w, _ = data.shape
-        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, w, h, 0,
+        h, w, rgba = data.shape
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, rgba, w, h, 0,
             gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, data)
         # gl.glTexSubImage2D(gl.GL_TEXTURE_2D, 0, 0, 0, w, h,
         #     gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, data)
@@ -264,9 +275,14 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
 
     def on_size(self, event):
         """called when window is repainted """
-        # make sure we have a texture to draw
+        self.set_aspect()
+
+        if self.finished_init:
+            self.on_draw()
+
+    def set_aspect(self):
         w, h = self.GetClientSizeTuple()
-        a = 1.0 * w / h
+        a = (240.0 / 336.0) * w / h
         xspan = 1
         yspan = 1
         if a > 1:
@@ -274,11 +290,12 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
         else:
             yspan = xspan/a
 
-        gl.glOrtho(-1*xspan, xspan, -1*yspan, yspan, -1, 1)
         gl.glViewport(0, 0, w, h);
-
-        if self.finished_init:
-            self.on_draw()
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+        gl.glOrtho(-1*xspan, xspan, -1*yspan, yspan, -1, 1)
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glLoadIdentity()
 
     def on_paint(self, event):
         """called when window is repainted """
@@ -334,7 +351,33 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
 
 
 class LegacyTextureCanvas(GLSLTextureCanvas):
-    pass
+    def init_shader(self):
+        pass
+
+    def calc_texture_data(self, raw=None):
+        raw = self.get_raw_texture_data(raw)
+        return raw
+
+    def render(self):
+        gl.glClearColor(0, 0, 0, 1)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+
+        self.set_aspect()
+
+        gl.glDisable(gl.GL_LIGHTING)
+        # Don't cull polygons that are wound the wrong way.
+        gl.glDisable(gl.GL_CULL_FACE)
+
+        gl.glEnable(gl.GL_TEXTURE_2D)
+        gl.glColor(1.0, 1.0, 1.0, 1.0)
+
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self.display_texture)
+        gl.glBegin(gl.GL_TRIANGLE_STRIP)
+        for pt in self.vertex_data:
+            print pt
+            gl.glVertex2f(pt[0], pt[1])
+            gl.glTexCoord2f(pt[2], pt[3])
+        gl.glEnd()
 
 
 def run():
