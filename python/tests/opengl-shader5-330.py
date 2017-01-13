@@ -87,14 +87,14 @@ def load_texture(filename=None):
         data[:,0] = np.arange(256, dtype=np.uint8)
         data[:,1] = data[:,0]
         data[:,2] = data[:,0]
-        data[:,3] = 256
+        data[:,3] = 255
 
     # generate a texture id, make it current
     texture = gl.glGenTextures(1)
     gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
 
     # texture mode and parameters controlling wrapping and scaling
-    gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_MODULATE)
+    gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE)
     gl.glTexParameterf(
         gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
     gl.glTexParameterf(
@@ -141,8 +141,11 @@ void main()
     vec4 pcolor;
 
     out_color = texture(tex, theCoords.st);
+    //out_color = vec4(theCoords.st, 0, 255);
     pcolor = normalize(texelFetch(palette, int(out_color.r * 255)));
-    out_color = pcolor;
+    // for some reason, the output color is half as bright as it should be
+    out_color = vec4(pcolor.r * 2, pcolor.g*2, pcolor.b*2, 1.0);
+    //out_color = vec4(pcolor.r, pcolor.g, pcolor.b, 1.0);
 }
 """
 
@@ -272,7 +275,7 @@ class Canvas(glcanvas.GLCanvas):
             # Activate palette texture
             gl.glActiveTexture(gl.GL_TEXTURE0 + self.palette_uniform)
             gl.glBindTexture(gl.GL_TEXTURE_BUFFER, self.palette_texture)
-            gl.glTexBuffer(gl.GL_TEXTURE_BUFFER, gl.GL_RGBA32F, self.palette_id)
+            gl.glTexBuffer(gl.GL_TEXTURE_BUFFER, gl.GL_RGBA8, self.palette_id)
             gl.glUniform1i(self.palette_uniform, 1)
 
             # # Activate array
