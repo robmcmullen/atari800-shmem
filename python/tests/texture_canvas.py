@@ -375,8 +375,8 @@ class LegacyTextureCanvas(GLSLTextureCanvas):
         gl.glBegin(gl.GL_TRIANGLE_STRIP)
         for pt in self.vertex_data:
             print pt
-            gl.glVertex2f(pt[0], pt[1])
             gl.glTexCoord2f(pt[2], pt[3])
+            gl.glVertex2f(pt[0], pt[1])
         gl.glEnd()
 
 
