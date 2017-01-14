@@ -25,10 +25,10 @@ from wx import glcanvas
 
 
 class GLProgram(object):
-    def __init__(self, vertex, fragment):
+    def __init__(self, vertex, fragment, bindings=[]):
         vertex_shader = self.compile(vertex, gl.GL_VERTEX_SHADER)
         fragment_shader = self.compile(fragment, gl.GL_FRAGMENT_SHADER)
-        self.prog = self.link(vertex_shader, fragment_shader)
+        self.prog = self.link([vertex_shader, fragment_shader], bindings=bindings)
 
     def compile(self, src, shader_type):
         shader = gl.glCreateShader(shader_type)
@@ -48,10 +48,12 @@ class GLProgram(object):
             )
         return shader
 
-    def link(self, *shader_objs):
+    def link(self, shader_objs, bindings=[]):
         prog = gl.glCreateProgram()
         for shader in shader_objs:
             gl.glAttachShader(prog, shader)
+        for index, name in bindings:
+            gl.glBindAttribLocation(prog, index, name)
         gl.glLinkProgram(prog)
         link_status = gl.glGetProgramiv(prog, gl.GL_LINK_STATUS)
         if link_status == gl.GL_FALSE:
@@ -74,10 +76,10 @@ class GLProgram(object):
 
 
 vertexShader = """
-#version 330
+#version 140
 
-layout (location=0) in vec2 position;
-layout (location=1) in vec2 in_tex_coords;
+in vec2 position;
+in vec2 in_tex_coords;
 
 out vec2 theCoords;
 
@@ -89,7 +91,7 @@ void main()
 """
 
 fragmentShader = """
-#version 330
+#version 140
 
 uniform samplerBuffer palette;
 uniform sampler2D tex;
@@ -147,7 +149,7 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
     def init_shader(self):
-        self.shader_prog = GLProgram(vertexShader, fragmentShader)
+        self.shader_prog = GLProgram(vertexShader, fragmentShader, [(0, "position"), (1, "in_tex_coords")])
 
         # load texture and assign texture unit for shaders
         self.tex_uniform = gl.glGetUniformLocation(self.shader_prog.prog, 'tex')
