@@ -106,7 +106,8 @@ class Atari800(object):
         self.frame_count = 0
         self.rmap, self.gmap, self.bmap = ntsc_color_map()
         self.frame_event = []
-        self.set_scale(1)
+        self.use_alpha = False
+        self.set_scale(1, self.use_alpha)
 
     def create_input_view(self, source):
         size = INPUT_DTYPE.itemsize
@@ -168,7 +169,7 @@ class Atari800(object):
                 still_waiting.append((count, callback))
         self.frame_event = still_waiting
 
-    def set_scale(self, scale=1):
+    def set_scale(self, scale=1, use_alpha=None):
         self.screen_scale = scale
         newdims = np.asarray((self.height * scale, self.width * scale))
         base = np.indices(newdims)
@@ -177,7 +178,20 @@ class Atari800(object):
         d.append(base[1]/self.screen_scale)
         cd = np.array(d)
         self.raw_scaled_lookup = list(cd)
-        self.screen = np.empty((self.height * self.screen_scale, self.width * self.screen_scale, 3), np.uint8)
+        if use_alpha is None:
+            use_alpha = self.use_alpha
+        else:
+            # set the value if either True or False
+            self.use_alpha = use_alpha
+            if use_alpha:
+                self.get_frame = self.get_frame_4
+            else:
+                self.get_frame = self.get_frame_3
+        if use_alpha:
+            components = 4
+        else:
+            components = 3
+        self.screen = np.empty((self.height * self.screen_scale, self.width * self.screen_scale, components), np.uint8)
 
     def scale_raw(self):
         scaled = self.raw
@@ -186,12 +200,22 @@ class Atari800(object):
             print "raw scale: %d, %s" % (self.screen_scale, scaled.shape)
         return scaled
 
-    def get_frame(self, scale=1):
+    def get_frame_3(self, scale=1):
         raw = self.scale_raw()
         self.screen[:,:,0] = self.rmap[raw]
         self.screen[:,:,1] = self.gmap[raw]
         self.screen[:,:,2] = self.bmap[raw]
         return self.screen
+
+    def get_frame_4(self, scale=1):
+        raw = self.scale_raw()
+        self.screen[:,:,0] = self.rmap[raw]
+        self.screen[:,:,1] = self.gmap[raw]
+        self.screen[:,:,2] = self.bmap[raw]
+        self.screen[:,:,3] = 255
+        return self.screen
+
+    get_frame = None
 
     def send_char(self, key_char):
         self.exchange[1:4] = [key_char, 0, 0]

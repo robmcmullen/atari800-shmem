@@ -272,6 +272,7 @@ class OpenGLEmulatorControl(OpenGLEmulatorMixin, LegacyTextureCanvas, EmulatorCo
     def __init__(self, parent, emulator, autostart=False):
         LegacyTextureCanvas.__init__(self, parent, -1, size=(3*emulator.width, 3*emulator.height))
         EmulatorControlBase.__init__(self, emulator, autostart)
+        emulator.set_scale(1, use_alpha=True)
 
     def get_raw_texture_data(self, raw=None):
         raw = np.flipud(self.emulator.get_frame())
