@@ -85,7 +85,7 @@ out vec2 theCoords;
 
 void main()
 {
-    gl_Position = vec4(position, 0, 1);
+    gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 0, 1);
     theCoords = in_tex_coords;
 }
 """
