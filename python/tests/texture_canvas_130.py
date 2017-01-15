@@ -108,8 +108,8 @@ void main()
     source = texture(tex, theCoords.st);
     //out_color = vec4(theCoords.st, 0, 255);
     pcolor = texture(palette, source.r);
-    out_color = (pcolor * 0.5) + (source * 0.5);
-    //out_color = pcolor;
+    //out_color = (pcolor * 0.5) + (source * 0.5);
+    out_color = pcolor;
 }
 """
 
@@ -361,7 +361,7 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
             print self.tex_uniform, self.palette_uniform, self.display_texture, getattr(self, 'palette_id') if hasattr(self, 'palette_id') else "None"
             gl.glActiveTexture(gl.GL_TEXTURE0 + self.tex_uniform)
             gl.glBindTexture(gl.GL_TEXTURE_2D, self.display_texture)
-            gl.glUniform1i(self.tex_uniform, 0)
+            gl.glUniform1i(self.tex_uniform, 1)
 
             # Activate palette texture
             gl.glActiveTexture(gl.GL_TEXTURE0 + self.palette_uniform)
@@ -371,7 +371,7 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
             else:
                 gl.glBindTexture(gl.GL_TEXTURE_1D, self.palette_texture)
 
-            gl.glUniform1i(self.palette_uniform, 1)
+            gl.glUniform1i(self.palette_uniform, 0)
 
             # # Activate array
             # gl.glBindVertexArray(self.vao_id)
