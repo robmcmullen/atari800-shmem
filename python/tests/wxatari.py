@@ -22,7 +22,7 @@ if module_dir not in sys.path:
 import pyatari800
 from pyatari800.akey import *
 from pyatari800.shmem import *
-from texture_canvas_130 import GLSLTextureCanvas, LegacyTextureCanvas
+from texture_canvas_120 import GLSLTextureCanvas, LegacyTextureCanvas
 
 import logging
 logging.basicConfig(level=logging.WARNING)

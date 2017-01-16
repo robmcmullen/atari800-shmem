@@ -98,18 +98,16 @@ uniform sampler2D tex;
 
 varying vec2 tex_coords;
 
-out vec4 out_color;
-
 void main()
 {
     vec4 source;
     vec4 pcolor;
 
-    source = texture(tex, tex_coords.st);
-    //out_color = vec4(tex_coords.st, 0, 255);
-    pcolor = texture(palette, source.r);
-    //out_color = (pcolor * 0.5) + (source * 0.5);
-    out_color = pcolor;
+    source = texture2D(tex, tex_coords.st);
+    //gl_FragColor = vec4(tex_coords.st, 0, 255);
+    pcolor = texture1D(palette, source.r);
+    //gl_FragColor = (pcolor * 0.5) + (source * 0.5);
+    gl_FragColor = pcolor;
 }
 """
 
