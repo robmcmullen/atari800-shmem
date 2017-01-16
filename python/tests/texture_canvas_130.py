@@ -288,7 +288,7 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
         # texture mode and parameters controlling wrapping and scaling
         gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE)
         gl.glTexParameterf(
-            gl.GL_TEXTURE_1D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
+            gl.GL_TEXTURE_1D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP)
         gl.glTexParameterf(
             gl.GL_TEXTURE_1D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
         gl.glTexParameterf(
