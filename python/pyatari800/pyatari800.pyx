@@ -32,6 +32,7 @@ cdef void callback(unsigned char *mem):
 
 def start_emulator(args, raw=None, size=0, pycb=None):
     global pycallback
+    global debug_frames
     cdef char *fake_args[10]
     cdef char **argv = fake_args
     cdef int argc
