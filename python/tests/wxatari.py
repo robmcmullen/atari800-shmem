@@ -248,6 +248,8 @@ class OpenGLEmulatorMixin(object):
         return raw
 
     def show_frame(self):
+        if not self.finished_init:
+            return
         frame = self.calc_texture_data()
         try:
             self.update_texture(self.display_texture, frame)
