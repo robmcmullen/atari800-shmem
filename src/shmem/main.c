@@ -127,7 +127,7 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 			}
 
 			/* or asked to exit */
-			else if (input->main_semaphore == 0xff | input->main_semaphore == 2) {
+			else if ((input->main_semaphore == 0xff) | (input->main_semaphore == 2)) {
 #ifdef DEBUG
 				printf("Found 0xff; stopping!\n");
 #endif
@@ -171,7 +171,7 @@ void callback(unsigned char *mem) {
 
 int main(int argc, char **argv)
 {
-	start_shmem(argc, argv, NULL, 0, callback);
+	return start_shmem(argc, argv, NULL, 0, callback);
 }
 
 /*

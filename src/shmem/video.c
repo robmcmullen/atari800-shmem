@@ -24,6 +24,7 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "platform.h"
 #include "screen.h"
@@ -99,10 +100,8 @@ void SHMEM_DebugVideo(unsigned char *mem) {
 
 int SHMEM_Video_Initialise(int *argc, char *argv[]) {
 	int i, j;
-	int help_only = FALSE;
 
 	for (i = j = 1; i < *argc; i++) {
-		int i_a = (i + 1 < *argc);              /* is argument available? */
 		if (strcmp(argv[i], "-shmem-debug-video") == 0)
 			debug_frames = TRUE;
 		else {
