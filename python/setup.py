@@ -3,8 +3,10 @@ from setuptools import setup, find_packages, Extension
 
 if sys.platform.startswith("win"):
     extra_compile_args = ["-DMSVC", "-D_CRT_SECURE_NO_WARNINGS"]
+    config_include = "include/win"
 else:
     extra_compile_args = ["-g"]
+    config_include = "include/linux"
 
 extensions = [
   Extension("pyatari800.pyatari800",
@@ -65,7 +67,7 @@ extensions = [
     "src/ide.c",
               ],
     extra_compile_args = extra_compile_args,
-    include_dirs = ["include", "src", "src/shmem"],
+    include_dirs = [config_include, "src", "src/shmem"],
     )
 ]
 
