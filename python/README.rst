@@ -1,41 +1,35 @@
-========
-pyatasm
-========
+==========
+pyatari800
+==========
 
-Python wrapper for ATasm, a mostly Mac/65 compatible 6502 cross-assembler
-
-
-Summary
-========
-
-From the ATasm readme::
-
-    ATasm is a 6502 command-line cross-assembler that is compatible with the
-    original Mac/65 macroassembler released by OSS software.  Code
-    development can now be performed using "modern" editors and compiles
-    with lightning speed.
-
-pyatasm is a python wrapper that uses the (slightly modified) C code from
-ATasm. It provides the front end to the assembler and returns the bytes (and
-other metadata) from the assembly.
+Python wrapper for the cross-platform Atari 8-bit emulator atari800. It
+includes a new shared-memory driver for atari800 allowing access to the
+internals of the emulator, and as an example front-end includes a wxPython
+client to display the emulator on Linux, Mac OS X, and Windows.
 
 
 Prerequisites
--------------
+=============
 
 * python 2.7 (but not 3.x yet) capable of building C extensions
 
+The wxPython front-end additionally requires:
+
+* wxPython 3.0.2 (classic, not Phoenix yet)
+* pyopengl
+
+
 Installation
-------------
+============
 
-pyatasm is available through PyPI::
+pyatari800 is available through PyPI::
 
-    pip install pyatasm
+    pip install pyatari800
 
 or you can compile from source::
 
-    git clone https://github.com/robmcmullen/pyatasm.git
-    cd pyatasm
+    git clone https://github.com/robmcmullen/pyatari800.git
+    cd pyatari800/python
     python setup install
 
 Your version of python must be able to build C extensions, which should be
@@ -47,12 +41,18 @@ cut-down version of their Visual Studio compiler just for compiling Python
 extensions! Download and install it from
 `here <https://www.microsoft.com/en-us/download/details.aspx?id=44266>`_.
 
+Windows compatibility code was used in pyatari800:
+
+* Dirent (a windows port of dirent.h) from https://github.com/tronkko/dirent
+  and licensed under the MIT license which is GPL compatible
+
+
 Developers
 ----------
 
-If you check out the pyatasm source from the git repository or you want to
-modify pyatasm and change the .pyx file, you'll need Cython. The .pyx file is
-compiled to C as a side effect of using the command::
+If you check out the pyatari800 source from the git repository or you want to
+modify pyatari800 and change the .pyx file, you'll need Cython. The .pyx file
+is compiled to C as a side effect of using the command::
 
     python setup.py sdist
 
@@ -61,40 +61,17 @@ compiled to C as a side effect of using the command::
 Usage
 =====
 
-A simple example::
-
-    #!/usr/bin/env python
-
-    from pyatasm import Assemble
-
-    asm = Assemble("tests/works.m65")
-
-    if asm:
-        print asm.segments
-        print asm.equates
-        print asm.labels
-    else:
-        print asm.errors
-
-Because pyatasm is a very thin wrapper around ATasm (and very little ATasm code
-was changed) it needs to creates files to do its work. These files will be
-created in the same directory as the source file, so the directory must be
-writeable.
-
-The segments attribute will contain a list of 3-tuples, each tuple being the
-start address, the end address, and the bytes for each segment of the assembly.
-A segment is defined as a contiguous sequence of bytes. If there is change of
-origin, a new segment will be created.
-
 
 
 License
 ==========
 
-pyatasm, python wrapper for ATasm
+pyatari800, python wrapper for atari800
 
-ATasm is Copyright (c) 1998-2014 Mark Schmelzenbach
-pyatasm is Copyright (c) 2016 Rob McMullen (feedback@playermissile.com)
+atari800 is Copyright (c) 1995-1998 David Firth
+        and Copyright (c) 1998-2017 Atari800 development team
+Dirent is Copyright (c) 2015 Toni Rönkkö
+pyatari800 is Copyright (c) 2017 Rob McMullen (feedback@playermissile.com)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
