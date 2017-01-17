@@ -23,6 +23,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include "config.h"
+#include <string.h>
+
 #include "atari.h"
 #include "log.h"
 #include "platform.h"
@@ -75,7 +78,7 @@ unsigned int PLATFORM_SoundAvailable(void)
 
 void PLATFORM_SoundWrite(UBYTE const *buffer, unsigned int size)
 {
-	unsigned char *dest;
+	Sound_setup_t *dest;
 
 	printf("copying %d bytes\n", size);
 	dest = SHMEM_GetSoundArray();
