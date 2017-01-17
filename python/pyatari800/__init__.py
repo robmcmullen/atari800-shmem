@@ -218,18 +218,26 @@ class Atari800(object):
     get_frame = None
 
     def send_char(self, key_char):
-        self.exchange[1:4] = [key_char, 0, 0]
+        self.exchange_input[0].keychar = key_char
+        self.exchange_input[0].keycode = 0
+        self.exchange_input[0].special = 0
 
     def send_keycode(self, keycode):
-        self.exchange[1:4] = [0, keycode, 0]
+        self.exchange_input[0].keychar = 0
+        self.exchange_input[0].keycode = keycode
+        self.exchange_input[0].special = 0
 
     def send_special_key(self, key_id):
-        self.exchange[1:4] = [0, 0, key_id]
+        self.exchange_input[0].keychar = 0
+        self.exchange_input[0].keycode = 0
+        self.exchange_input[0].special = key_id
         if key_id in [2, 3]:
             self.frame_event.append((self.frame_count + 2, self.clear_keys))
 
     def clear_keys(self):
-        self.exchange[1:4] = [0, 0, 0]
+        self.exchange_input[0].keychar = 0
+        self.exchange_input[0].keycode = 0
+        self.exchange_input[0].special = 0
 
     def set_option(self, state):
         self.exchange_input[0].option = state

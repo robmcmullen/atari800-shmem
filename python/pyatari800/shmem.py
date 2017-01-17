@@ -2,6 +2,7 @@
 import numpy as np
 
 INPUT_DTYPE = np.dtype([
+    ("frame_count", np.uint32),
     ("main_semaphore", np.uint8),
     ("keychar", np.uint8),
     ("keycode", np.uint8),

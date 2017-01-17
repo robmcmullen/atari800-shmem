@@ -18,6 +18,7 @@
 extern unsigned char *shared_memory;
 
 typedef struct {
+	ULONG frame_count; /* read-only from client; overwritten every frame */
 	UBYTE main_semaphore; /* 0=input ready, 1=screen ready, 0xff=exit emulator */
 	UBYTE keychar;
 	UBYTE keycode;

@@ -103,7 +103,7 @@ int PLATFORM_Exit(int run_monitor)
 
 int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr cb)
 {
-	int i;
+	unsigned int frame_count;
 	input_template_t *input;
 
 	if (raw) SHMEM_UseMemory(raw, len);
@@ -115,7 +115,7 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 	input = SHMEM_GetInputArray();
 
 	/* main loop */
-	i = 0;
+	frame_count = 0;
 	for (;;) {
 		for (;;) {
 			/* block until input ready */
@@ -138,13 +138,20 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 #endif
 			Util_sleep(0.001);
 		}
+
+		/* increment frame count before screen so error when generating
+		   this screen will reflect the frame number that caused it */
+		frame_count++;
+		input->frame_count = frame_count;
 		SHMEM_TakeInputArraySnapshot();
 		INPUT_key_code = PLATFORM_Keyboard();
 		SHMEM_Mouse();
 		Atari800_Frame();
 		if (Atari800_display_screen)
 			PLATFORM_DisplayScreen();
-		i++;
+#ifdef DEBUG
+		printf(" %d\n", frame_count);
+#endif
 		input->main_semaphore = 1; /* screen ready! */
 		if (cb) {
 			(*cb)(shared_memory);
