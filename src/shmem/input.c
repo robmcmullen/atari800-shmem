@@ -413,6 +413,7 @@ int SHMEM_Input_Initialise(int *argc, char *argv[])
 	int i;
 	int j;
 	int help_only = FALSE;
+	input_template_t *input;
 
 	for (i = j = 1; i < *argc; i++) {
 		int a_m = FALSE;			/* error, argument missing! */
@@ -437,7 +438,7 @@ int SHMEM_Input_Initialise(int *argc, char *argv[])
 	if (help_only)
 		return TRUE;
 
-	input_template_t *input = SHMEM_GetInputArray();
+	input = SHMEM_GetInputArray();
 
 	if (input == NULL) {
 		Log_print("SHMEM_GetInputArray failed");

@@ -104,13 +104,15 @@ int PLATFORM_Exit(int run_monitor)
 int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr cb)
 {
 	int i;
+	input_template_t *input;
+
 	if (raw) SHMEM_UseMemory(raw, len);
 
 	/* initialise Atari800 core */
 	if (!Atari800_Initialise(&argc, argv))
 		return 3;
 
-	input_template_t *input = SHMEM_GetInputArray();
+	input = SHMEM_GetInputArray();
 
 	/* main loop */
 	i = 0;
