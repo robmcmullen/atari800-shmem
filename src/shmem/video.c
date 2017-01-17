@@ -31,9 +31,9 @@
 #include "shmem/video.h"
 #include "shmem/init.h"
 
-static int frame_count=0;
+int frame_count;
 
-static int debug_frames = 0;
+unsigned int debug_video;
 
 void PLATFORM_DisplayScreen(void)
 {
@@ -42,9 +42,8 @@ void PLATFORM_DisplayScreen(void)
 	int x_offset;
 	int x_count;
 
-	if (debug_frames)
+	if (debug_video)
 		printf("display frame #%d (%d-%d, %d-%d)\n", frame_count, Screen_visible_x1, Screen_visible_x2, Screen_visible_y1, Screen_visible_y2);
-	frame_count++;
 
 	/* set up screen copy of middle 336 pixels to shared memory buffer */
 	x = Screen_visible_x2 - Screen_visible_x1;
@@ -67,10 +66,10 @@ void PLATFORM_DisplayScreen(void)
 		y--;
 	}
 
-	if (debug_frames) {
+	if (debug_video) {
 	/* let emulator stabilize, then print out sample of screen bytes */
 		if (frame_count > 100) {
-			/*SHMEM_DebugVideo(SHMEM_GetVideoArray());*/
+			SHMEM_DebugVideo(SHMEM_GetVideoArray());
 		}
 	}
 }
@@ -78,6 +77,7 @@ void PLATFORM_DisplayScreen(void)
 void SHMEM_DebugVideo(unsigned char *mem) {
 	int x, y;
 
+	printf("frame %d\n", frame_count);
 	mem += (336 * 24) + SHMEM_VIDEO_OFFSET;
 	for (y = 0; y < 24; y++) {
 		for (x = 8; x < 87; x++) {
@@ -101,9 +101,11 @@ void SHMEM_DebugVideo(unsigned char *mem) {
 int SHMEM_Video_Initialise(int *argc, char *argv[]) {
 	int i, j;
 
+	frame_count = 0;
+	debug_video = FALSE;
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-shmem-debug-video") == 0)
-			debug_frames = TRUE;
+			debug_video = TRUE;
 		else {
 			argv[j++] = argv[i];
 		}

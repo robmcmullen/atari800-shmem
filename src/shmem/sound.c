@@ -32,6 +32,8 @@
 #include "init.h"
 #include "sound.h"
 
+int debug_sound;
+
 static unsigned int hw_buffer_size = 0;
 
 int PLATFORM_SoundSetup(Sound_setup_t *setup)
@@ -80,7 +82,9 @@ void PLATFORM_SoundWrite(UBYTE const *buffer, unsigned int size)
 {
 	Sound_setup_t *dest;
 
-	printf("copying %d bytes\n", size);
+	if (debug_sound) {
+		printf("copying %d bytes\n", size);
+	}
 	dest = SHMEM_GetSoundArray();
 	memcpy(dest, buffer, size);
 }

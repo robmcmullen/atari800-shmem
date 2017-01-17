@@ -42,6 +42,10 @@
 #include "shmem/input.h"
 #include "shmem/video.h"
 
+extern int debug_sound;
+
+extern unsigned int frame_count;
+
 int PLATFORM_Configure(char *option, char *parameters)
 {
 	return TRUE;
@@ -57,9 +61,13 @@ int PLATFORM_Initialise(int *argc, char *argv[])
 	int i, j;
 	int help_only = FALSE;
 
+	debug_sound = FALSE;
 	for (i = j = 1; i < *argc; i++) {
 		if (strcmp(argv[i], "-help") == 0) {
 			help_only = TRUE;
+		}
+		if (strcmp(argv[i], "-shmem-debug-sound") == 0) {
+			debug_sound = TRUE;
 		}
 		argv[j++] = argv[i];
 	}
@@ -103,7 +111,6 @@ int PLATFORM_Exit(int run_monitor)
 
 int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr cb)
 {
-	unsigned int frame_count;
 	input_template_t *input;
 
 	if (raw) SHMEM_UseMemory(raw, len);
@@ -149,9 +156,6 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 		Atari800_Frame();
 		if (Atari800_display_screen)
 			PLATFORM_DisplayScreen();
-#ifdef DEBUG
-		printf(" %d\n", frame_count);
-#endif
 		input->main_semaphore = 1; /* screen ready! */
 		if (cb) {
 			(*cb)(shared_memory);
