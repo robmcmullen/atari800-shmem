@@ -64,7 +64,6 @@ extensions = [
     "src/voicebox.c",
     "src/votrax.c",
     "src/votraxsnd.c",
-    "src/ide.c",
               ],
     extra_compile_args = extra_compile_args,
     include_dirs = [config_include, "src", "src/shmem"],

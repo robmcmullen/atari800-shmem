@@ -325,7 +325,7 @@
 /* #undef HAVE__MKDIR */
 
 /* Define to add IDE harddisk emulation. */
-#define IDE 1
+/* undef IDE */
 
 /* Define to allow sound interpolation. */
 #define INTERPOLATE_SOUND 1

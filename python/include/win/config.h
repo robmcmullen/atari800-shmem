@@ -75,7 +75,7 @@
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
-/* #undef HAVE_DIRENT_H */
+#define HAVE_DIRENT_H
 
 /* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
 /* #undef HAVE_DOPRNT */
@@ -168,7 +168,7 @@
 /* #undef HAVE_NETINET_IN_H */
 
 /* Define to 1 if you have the `opendir' function. */
-/* #undef HAVE_OPENDIR */
+#define HAVE_OPENDIR
 
 /* Support for OpenGL graphics acceleration. */
 /* #undef HAVE_OPENGL */
@@ -318,7 +318,7 @@
 /* #undef HAVE__MKDIR */
 
 /* Define to add IDE harddisk emulation. */
-#define IDE 1
+/* #undef IDE */
 
 /* Define to allow sound interpolation. */
 #define INTERPOLATE_SOUND 1
