@@ -119,12 +119,13 @@ Usage
 License
 ==========
 
-pyatari800, python wrapper for atari800
+pyatari800 (python wrapper for atari800) and atari800-shmem (shared memory
+driver for atari800)
 
-atari800 is Copyright (c) 1995-1998 David Firth
-        and Copyright (c) 1998-2017 Atari800 development team
-Dirent is Copyright (c) 2015 Toni Rönkkö
-pyatari800 is Copyright (c) 2017 Rob McMullen (feedback@playermissile.com)
+* atari800 is Copyright (c) 1995-1998 David Firth
+* and Copyright (c) 1998-2017 Atari800 development team
+* Dirent is Copyright (c) 2015 Toni Rönkkö
+* pyatari800 and atari800-shmem is Copyright (c) 2017 Rob McMullen (feedback@playermissile.com)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
