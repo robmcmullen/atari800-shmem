@@ -1,3 +1,4 @@
+import os
 import sys
 from setuptools import setup, find_packages, Extension
 
@@ -86,7 +87,17 @@ if "sdist" in sys.argv:
 
 execfile('pyatari800/_metadata.py')
 
-setup(
+# Temporarily move the config.h in the main src directory out of the way
+# because it will be found before the pyatari800 platform-specific include file
+
+src_config = "src/config.h"
+moved_config = None
+if os.path.exists(src_config):
+    moved_config = "src/configPY.hPY"
+    os.rename(src_config, moved_config)
+
+try:
+    setup(
   name = "pyatari800",
   version = __version__,
   author = __author__,
@@ -111,3 +122,6 @@ setup(
   ext_modules = extensions,
   packages = ["pyatari800"],
 )
+finally:
+    if moved_config:
+        os.rename(moved_config, src_config)
