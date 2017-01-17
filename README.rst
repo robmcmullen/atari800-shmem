@@ -1,17 +1,33 @@
-==========
-pyatari800
-==========
+================================================
+pyatari800 and the atari800 shared memory driver
+================================================
 
-Python wrapper for the cross-platform Atari 8-bit emulator atari800. It
-includes a new shared-memory driver for atari800 allowing access to the
-internals of the emulator, and as an example front-end includes a wxPython
-client to display the emulator on Linux, Mac OS X, and Windows.
+A new shared-memory driver for the cross-platform Atari 8-bit emulator atari800
+allowing custom front-ends in any language that supports shared memory access.
+It provides two-way communication to the underlying emulator, sending inputs to
+the core and receiving the screen and sound information for every frame.
+
+As an example, pyatari800 is a python wrapper for the cross-platform Atari
+8-bit emulator atari800. This is a generic wrapper that can be used by any
+python program.
+
+As a further example, there is a small demo front-end for wxPython that will
+operate on all 3 major platforms: Linux, Mac OS X, and Windows.
 
 
 Prerequisites
 =============
 
+atari800-shmem
+--------------
+
+* C compiler
+
+pyatari800
+----------
+
 * python 2.7 (but not 3.x yet) capable of building C extensions
+* numpy
 
 The wxPython front-end additionally requires:
 
@@ -48,6 +64,32 @@ Windows compatibility code was used in pyatari800:
 
 
 Developers
+==========
+
+If you check out the code from the git repository, you will have to build a few
+files that are included with source distributions but are not in the repository
+because they are generated files.
+
+atari800-shmem
+--------------
+
+All the following commands are from the atari800/src directoyr. The configure
+script must be created with::
+
+    ./autogen.sh
+
+From there, it's the normal GNU-style install::
+
+    ./configure --target=shmem
+    make
+    ./atari800
+
+Since atari800-shmem is designed to be used as a module for a larger program,
+running it at the command line is not very useful. However, there is a simple
+display converting Graphics 0 to text "pixels" that displays the upper-left
+corner of every frame to show that the emulator is running.
+
+pyatari800
 ----------
 
 If you check out the pyatari800 source from the git repository or you want to
@@ -56,6 +98,17 @@ is compiled to C as a side effect of using the command::
 
     python setup.py sdist
 
+For testing, use::
+
+    python setup.py build_ext --inplace
+
+The test code is located in the ``tests`` directory. A simple wxPython front-
+end is included as ``wxatari.py`` and when run on the command line, will pass
+through any arguments to the atari800 core. E.g.::
+
+    python wxatari.py jumpman.atr
+
+will run Jumpman in the wxPython window.
 
 
 Usage
