@@ -78,8 +78,8 @@ void SHMEM_DebugVideo(unsigned char *mem) {
 	int x, y;
 
 	mem += (336 * 24) + SHMEM_VIDEO_OFFSET;
-	for (y = 0; y < 16; y++) {
-		for (x = 8; x < 140; x++) {
+	for (y = 0; y < 24; y++) {
+		for (x = 8; x < 87; x++) {
 			/*printf(" %02x", src[x]);*/
 			/* print out text version of screen, assuming graphics 0 memo pad boot screen */
 			unsigned char c = mem[x];

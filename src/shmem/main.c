@@ -146,19 +146,25 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 			PLATFORM_DisplayScreen();
 		i++;
 		input->main_semaphore = 1; /* screen ready! */
-		if (i > 100) {
-			if (cb) {
-				(*cb)(shared_memory);
-			}
+		if (cb) {
+			(*cb)(shared_memory);
 		}
 	}
 
 	return 0;
 }
 
+void callback(unsigned char *mem) {
+	input_template_t *input;
+
+	input = SHMEM_GetInputArray();
+	SHMEM_DebugVideo(mem);
+	input->main_semaphore = 0; /* next frame! */
+}
+
 int main(int argc, char **argv)
 {
-	start_shmem(argc, argv, NULL, 0, NULL);
+	start_shmem(argc, argv, NULL, 0, callback);
 }
 
 /*
