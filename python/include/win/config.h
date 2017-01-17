@@ -192,7 +192,7 @@
 #define HAVE_SIGNAL_H 1
 
 /* Define to 1 if you have the `snprintf' function. */
-/* #undef HAVE_SNPRINTF */
+#define HAVE_SNPRINTF
 
 /* Define to 1 if you have the `socket' function. */
 /* #undef HAVE_SOCKET */
@@ -306,7 +306,7 @@
 #define HAVE_VPRINTF 1
 
 /* Define to 1 if you have the `vsnprintf' function. */
-/* #undef HAVE_VSNPRINTF */
+#define HAVE_VSNPRINTF
 
 /* Define to 1 if you have the <windows.h> header file. */
 #define HAVE_WINDOWS_H 1
@@ -548,7 +548,38 @@
    code using `volatile' can become incorrect without. Disable with care. */
 /* #undef volatile */
 
-/***************************************************************************/
+/* snprintf compatibility from http://stackoverflow.com/questions/2915672 */
+#ifndef SPRINTF_COMPAT_H
+#define SPRINTF_COMPAT_H
 
-/* use our exit() instead of libc's */
-#define exit main_exit
+#include <stdarg.h>
+#include <stdio.h>
+#include <varargs.h>
+#define snprintf c99_snprintf
+#define vsnprintf c99_vsnprintf
+
+__inline int c99_vsnprintf(char *outBuf, size_t size, const char *format, va_list ap)
+{
+    int count = -1;
+
+    if (size != 0)
+        count = _vsnprintf_s(outBuf, size, _TRUNCATE, format, ap);
+    if (count == -1)
+        count = _vscprintf(format, ap);
+
+    return count;
+}
+
+__inline int c99_snprintf(char *outBuf, size_t size, const char *format, ...)
+{
+    int count;
+    va_list ap;
+
+    va_start(ap, format);
+    count = c99_vsnprintf(outBuf, size, format, ap);
+    va_end(ap);
+
+    return count;
+}
+
+#endif SPRINTF_COMPAT_H
