@@ -27,7 +27,7 @@ from texture_canvas_120 import GLSLTextureCanvas, LegacyTextureCanvas
 import logging
 logging.basicConfig(level=logging.WARNING)
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
+#log.setLevel(logging.DEBUG)
 
 
 class EmulatorControlBase(object):
@@ -194,6 +194,12 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
         return bmp
 
     def set_scale(self, scale):
+        """Scale a numpy array by an integer factor
+
+        This turns out to be too slow to be used by the screen display. OpenGL
+        displays don't use this at all because the display hardware scales
+        automatically.
+        """
         self.screen_scale = scale
         self.delay = 5 * scale * scale
         newdims = np.asarray((self.emulator.height * scale, self.emulator.width * scale))
@@ -210,7 +216,7 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
         if self.screen_scale == 1:
             return frame
         scaled = frame[self.raw_scaled_lookup]
-        print "panel scale: %d, %s" % (self.screen_scale, scaled.shape)
+        log.debug("panel scale: %d, %s" % (self.screen_scale, scaled.shape))
         return scaled
 
     def show_frame(self):
@@ -243,7 +249,6 @@ class OpenGLEmulatorMixin(object):
         pass
 
     def get_raw_texture_data(self, raw=None):
-        print "RAW!"
         raw = np.flipud(self.emulator.raw.reshape((240, 336)))
         return raw
 
@@ -261,9 +266,7 @@ class OpenGLEmulatorMixin(object):
         self.on_draw()
 
     def on_paint(self, evt):
-        print "here"
         if not self.finished_init:
-            print "here1"
             self.init_context()
         self.show_frame()
 
@@ -278,7 +281,7 @@ class OpenGLEmulatorControl(OpenGLEmulatorMixin, LegacyTextureCanvas, EmulatorCo
 
     def get_raw_texture_data(self, raw=None):
         raw = np.flipud(self.emulator.get_frame())
-        print "raw data for legacy version:", raw.shape
+        log.debug("raw data for legacy version: %s" % str(raw.shape))
         return raw
 
 
