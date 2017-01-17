@@ -70,7 +70,7 @@ class GLProgram(object):
         gl.glUseProgram(self.prog)
 
     def __exit__(self, type, value, traceback):
-        gl.glBindVertexArray(0)
+        #gl.glBindVertexArray(0)
         gl.glUseProgram(0)
 
 
@@ -78,15 +78,10 @@ class GLProgram(object):
 vertexShader = """
 #version 120
 
-attribute vec2 position;
-attribute vec2 in_tex_coords;
-
-varying vec2 tex_coords;
-
 void main()
 {
-    gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 0, 1);
-    tex_coords = in_tex_coords;
+    gl_TexCoord[0] = gl_MultiTexCoord0;
+    gl_Position = ftransform();
 }
 """
 
@@ -96,18 +91,18 @@ fragmentShader = """
 uniform sampler1D palette;
 uniform sampler2D tex;
 
-varying vec2 tex_coords;
-
 void main()
 {
     vec4 source;
     vec4 pcolor;
 
-    source = texture2D(tex, tex_coords.st);
-    //gl_FragColor = vec4(tex_coords.st, 0, 255);
+    source = texture2D(tex, gl_TexCoord[0].st);
+    //gl_FragColor = vec4(gl_TexCoord[0].st, 0, 255);
     pcolor = texture1D(palette, source.r);
-    //gl_FragColor = (pcolor * 0.5) + (source * 0.5);
+    gl_FragColor = (pcolor * 0.5) + (source * 0.5);
     gl_FragColor = pcolor;
+    //gl_FragColor = vec4(1,0,0,1) + (pcolor * 0.001);
+    //gl_FragColor = vec4(gl_TexCoord[0].st,0,1) + (pcolor * 0.001);
 }
 """
 
@@ -168,8 +163,8 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
         self.init_shader()
 
         # Core OpenGL requires that at least one OpenGL vertex array be bound
-        self.vao_id = gl.glGenVertexArrays(1)
-        gl.glBindVertexArray(self.vao_id)
+        #self.vao_id = gl.glGenVertexArrays(1)
+        #gl.glBindVertexArray(self.vao_id)
 
         # Need self.vbo_id for triangle vertices and texture UV coordinates
         self.vbo_id = gl.glGenBuffers(1)
@@ -189,15 +184,15 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
         # gl.glTexBuffer(gl.GL_TEXTURE_BUFFER, gl.GL_RGBA8, self.palette_id)
         # self.palette_texture = gl.glGenTextures(1)
 
-        gl.glEnableVertexAttribArray(0)
-        gl.glEnableVertexAttribArray(1)
-        gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 16, None)
+        #gl.glEnableVertexAttribArray(0)
+        #gl.glEnableVertexAttribArray(1)
+        #gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 16, None)
         # the last parameter is a pointer
-        gl.glVertexAttribPointer(1, 2, gl.GL_FLOAT, gl.GL_TRUE, 16, ctypes.c_void_p(8))
+        #gl.glVertexAttribPointer(1, 2, gl.GL_FLOAT, gl.GL_TRUE, 16, ctypes.c_void_p(8))
 
         # Finished
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-        gl.glBindVertexArray(0)
+        #gl.glBindVertexArray(0)
 
         self.finished_init = True
 
@@ -303,6 +298,8 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
             self.on_draw()
 
     def set_aspect(self):
+        if not self.finished_init:
+            return
         w, h = self.GetClientSizeTuple()
         a = (240.0 / 336.0) * w / h
         xspan = 1
@@ -342,10 +339,13 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glEnable(gl.GL_TEXTURE_1D)
         gl.glEnable(gl.GL_TEXTURE_2D)
+        gl.glDisable(gl.GL_LIGHTING)
+        gl.glDisable(gl.GL_CULL_FACE)
+        gl.glColor(1.0, 1.0, 1.0, 1.0)
 
         with self.shader_prog:
             # Activate array
-            gl.glBindVertexArray(self.vao_id)
+            #gl.glBindVertexArray(self.vao_id)
 
             # FIXME: Why does the following work? tex_uniform is 1,
             # palette_uniform is 0, but I have to set the uniform for
@@ -373,9 +373,18 @@ class GLSLTextureCanvas(glcanvas.GLCanvas):
 
             # # Activate array
             # gl.glBindVertexArray(self.vao_id)
+            #gl.glEnableClientState(gl.GL_VERTEX_ARRAY)  # FIXME: deprecated
+            #gl.glVertexPointer(2, gl.GL_FLOAT, 0, None)  # FIXME: deprecated
 
             # draw triangle
-            gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
+            #gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self.display_texture)
+            gl.glBegin(gl.GL_TRIANGLE_STRIP)
+            for pt in self.vertex_data:
+                print pt
+                gl.glTexCoord2f(pt[2], pt[3])
+                gl.glVertex2f(pt[0], pt[1])
+            gl.glEnd()
 
 
 class LegacyTextureCanvas(GLSLTextureCanvas):
