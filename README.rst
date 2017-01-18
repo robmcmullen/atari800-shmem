@@ -37,21 +37,18 @@ The wxPython front-end additionally requires:
 Installation
 ============
 
-pyatari800 is available through PyPI::
-
-    pip install pyatari800
-
-or you can compile from source::
+pyatari800 will eventually be available through PyPI, but currently you have to
+compile from source::
 
     git clone https://github.com/robmcmullen/pyatari800.git
     cd pyatari800/python
-    python setup install
+    python setup.py sdist && python setup.py build_ext --inplace
 
 Your version of python must be able to build C extensions, which should be
 automatic in most linux and on OS X. You may have to install the python
 development packages on linux distributions like Ubuntu or Linux Mint.
 
-Windows doesn't come with a C compiler, but happily, Microsoft provides a
+Windows doesn't come with a C compiler, but happily Microsoft provides a
 cut-down version of their Visual Studio compiler just for compiling Python
 extensions! Download and install it from
 `here <https://www.microsoft.com/en-us/download/details.aspx?id=44266>`_.
@@ -72,29 +69,51 @@ because they are generated files.
 atari800-shmem
 --------------
 
-All the following commands are from the atari800/src directoyr. The configure
-script must be created with::
+The shared memory "platform" is designed to be used as an embedded module for a
+larger program, so it's not really useful as a platform for the atari800
+executable. But for demo purposes a sample version can be compiled that will
+capture every display frame and convert the upper left corner of the screen
+into ASCII characters that will be displayed in the terminal. After checking out the source with::
 
+    git clone https://github.com/robmcmullen/pyatari800.git
+
+the configure script must be created with::
+
+    cd atari800/src
     ./autogen.sh
 
-From there, it's the normal GNU-style install::
+From there, it's the normal GNU-style build::
 
     ./configure --target=shmem
     make
     ./atari800
 
-Since atari800-shmem is designed to be used as a module for a larger program,
-running it at the command line is not very useful. However, there is a simple
-display converting Graphics 0 to text "pixels" that displays the upper-left
-corner of every frame to show that the emulator is running.
+Embedding in other programs
+---------------------------
 
-pyatari800
-----------
+The shmem target is designed to be an interface between the atari800 emulator
+core and some other programming language. If the language can compile C
+extensions (like Python can) and can create shared memory blocks, you should be
+able to control and view the atari800 emulator from within your program.
 
-If you check out the pyatari800 source from the git repository or you want to
-modify pyatari800 and change the .pyx file, you'll need Cython. The .pyx file
-is compiled to C as a side effect of using the command::
+My use case was directly embedding the emulator in a Python program so that I
+could display the emulated screen inside my program. Longer term goals were to
+be able to step through the code and create a GUI debugger as in the `Altirra
+emulator <http://www.virtualdub.org/altirra.html>`_, except unlike Altirra
+would be cross-platform.
 
+
+
+Example embedding: pyatari800
+-----------------------------
+
+If you check out the pyatari800 source from the git repository::
+
+    git clone https://github.com/robmcmullen/pyatari800.git
+
+or you want to modify pyatari800 and change the .pyx file, you'll need Cython. The .pyx file is compiled to C as a side effect of using the command::
+
+    cd python
     python setup.py sdist
 
 For testing, use::
@@ -105,9 +124,11 @@ The test code is located in the ``tests`` directory. A simple wxPython front-
 end is included as ``wxatari.py`` and when run on the command line, will pass
 through any arguments to the atari800 core. E.g.::
 
+    cd tests
     python wxatari.py jumpman.atr
 
-will run Jumpman in the wxPython window.
+will run Jumpman in the wxPython window (assuming you have the ATR image of
+Jumpman as jumpman.atr, of course.  See ).
 
 
 Usage
