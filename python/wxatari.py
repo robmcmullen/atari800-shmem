@@ -22,7 +22,7 @@ if module_dir not in sys.path:
 import pyatari800
 from pyatari800.akey import *
 from pyatari800.shmem import *
-from texture_canvas_120 import GLSLTextureCanvas, LegacyTextureCanvas
+from pyatari800.ui_wx import wxGLSLTextureCanvas, wxLegacyTextureCanvas
 
 import logging
 logging.basicConfig(level=logging.WARNING)
@@ -273,9 +273,9 @@ class OpenGLEmulatorMixin(object):
     on_paint_double_buffer = on_paint
 
 
-class OpenGLEmulatorControl(OpenGLEmulatorMixin, LegacyTextureCanvas, EmulatorControlBase):
+class OpenGLEmulatorControl(OpenGLEmulatorMixin, wxLegacyTextureCanvas, EmulatorControlBase):
     def __init__(self, parent, emulator, autostart=False):
-        LegacyTextureCanvas.__init__(self, parent, -1, size=(3*emulator.width, 3*emulator.height))
+        wxLegacyTextureCanvas.__init__(self, parent, pyatari800.NTSC, -1, size=(3*emulator.width, 3*emulator.height))
         EmulatorControlBase.__init__(self, emulator, autostart)
         emulator.set_scale(1, use_alpha=True)
 
@@ -285,9 +285,9 @@ class OpenGLEmulatorControl(OpenGLEmulatorMixin, LegacyTextureCanvas, EmulatorCo
         return raw
 
 
-class GLSLEmulatorControl(OpenGLEmulatorMixin, GLSLTextureCanvas, EmulatorControlBase):
+class GLSLEmulatorControl(OpenGLEmulatorMixin, wxGLSLTextureCanvas, EmulatorControlBase):
     def __init__(self, parent, emulator, autostart=False):
-        GLSLTextureCanvas.__init__(self, parent, -1, size=(3*emulator.width, 3*emulator.height))
+        wxGLSLTextureCanvas.__init__(self, parent, pyatari800.NTSC, -1, size=(3*emulator.width, 3*emulator.height))
         EmulatorControlBase.__init__(self, emulator, autostart)
 
 

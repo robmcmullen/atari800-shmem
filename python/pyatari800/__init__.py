@@ -5,6 +5,7 @@ import numpy as np
 
 from pyatari800 import start_emulator
 from shmem import *
+from colors import *
 from _metadata import __version__
 
 debug_frames = False

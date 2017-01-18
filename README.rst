@@ -152,24 +152,29 @@ If you check out the pyatari800 source from the git repository::
 
     git clone https://github.com/robmcmullen/pyatari800.git
 
-or you want to modify pyatari800 and change the .pyx file, you'll need Cython. The .pyx file is compiled to C as a side effect of using the command::
+you will need to build the C extension with::
+
+    cd python
+    python setup.py build_ext --inplace
+
+A simple wxPython front-end is included as ``wxatari.py`` and when run on the
+command line, will pass through any arguments to the atari800 core. E.g.::
+
+    python wxatari.py -pal jumpman.atr
+
+which will run Jumpman in PAL mode in the wxPython window (assuming you have
+the ATR image of Jumpman as jumpman.atr, of course.  See `Atarimania
+<http://www.atarimania.com/game-atari-400-800-xl-xe-jumpman_2713.html>`_, for
+example).
+
+I have used `Cython <http://cython.org/>`_ as the interface between Python and
+the C code, but I have included the latest version of the C code that was
+generated from the .pyx file. You'll only need to install Cython if you want to
+modify pyatari800 and change the .pyx file. If you do, the .pyx file is
+compiled to C as a side effect of using the command::
 
     cd python
     python setup.py sdist
-
-For testing, use::
-
-    python setup.py build_ext --inplace
-
-The test code is located in the ``tests`` directory. A simple wxPython front-
-end is included as ``wxatari.py`` and when run on the command line, will pass
-through any arguments to the atari800 core. E.g.::
-
-    cd tests
-    python wxatari.py jumpman.atr
-
-will run Jumpman in the wxPython window (assuming you have the ATR image of
-Jumpman as jumpman.atr, of course.  See `Atarimania <http://www.atarimania.com/game-atari-400-800-xl-xe-jumpman_2713.html>`_, for example).
 
 The display code uses OpenGL 2.0 and OpenGL Shading Language (GLSL) 1.2 to
 display the emulated screen because converting the screen array to RGB and
