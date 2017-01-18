@@ -28,6 +28,10 @@ pyatari800
 * python 2.7 (but not 3.x yet) capable of building C extensions
 * numpy
 
+Optionally:
+
+* Cython (only if you want to modify the .pyx files)
+
 The wxPython front-end additionally requires:
 
 * wxPython 3.0.2 (classic, not Phoenix yet)
@@ -59,37 +63,8 @@ Windows compatibility code was used in pyatari800:
   and licensed under the MIT license which is GPL compatible
 
 
-Developers
-==========
-
-If you check out the code from the git repository, you will have to build a few
-files that are included with source distributions but are not in the repository
-because they are generated files.
-
-atari800-shmem
---------------
-
-The shared memory "platform" is designed to be used as an embedded module for a
-larger program, so it's not really useful as a platform for the atari800
-executable. But for demo purposes a sample version can be compiled that will
-capture every display frame and convert the upper left corner of the screen
-into ASCII characters that will be displayed in the terminal. After checking out the source with::
-
-    git clone https://github.com/robmcmullen/pyatari800.git
-
-the configure script must be created with::
-
-    cd atari800/src
-    ./autogen.sh
-
-From there, it's the normal GNU-style build::
-
-    ./configure --target=shmem
-    make
-    ./atari800
-
 Embedding in other programs
----------------------------
+===========================
 
 The shared memory ("shmem") target is designed to be an interface between the
 atari800 emulator core and some other programming language. If the language can
@@ -97,9 +72,9 @@ compile C extensions (like Python can) and can create shared memory blocks, you
 should be able to control and view the atari800 emulator from within your
 program.
 
-My use case was directly embedding the emulator in a Python program so that I
-could display the emulated screen inside my program. Longer term goals were to
-be able to step through the code and create a GUI debugger as in the `Altirra
+My use case was embedding the emulator in a Python program so that I could
+display the emulated screen inside my program. Longer term goals were to be
+able to step through the code and create a GUI debugger as in the `Altirra
 emulator <http://www.virtualdub.org/altirra.html>`_, except unlike Altirra
 would be cross-platform.
 
@@ -111,22 +86,25 @@ The operation of the shmem platform requires the wrapper program to create a
 block of shared memory at least ``SHMEM_TOTAL_SIZE`` bytes long (aligned to a
 32 bit boundary if the platform requires it to access 32 bit values) and pass
 the address into the initialization routine, ``start_shmem``. This initializes
-the emulator (through the ``Atari800_Initialise`` routine) and generates the
-first frame of the emulation.
+the emulator (through the ``Atari800_Initialise`` routine that also initializes
+all of the shmem components) and generates the first frame of the emulation.
 
 The shared memory block is broken up into sections: the input section, the
 video section, and the sound section. The input section is 128 bytes long and
-has specific memory locations for the wrapper program to set everything that
-the emulator needs for input: key values, joystick values, special keys, and
-mouse buttons.
+is the only section that the emulator will read from. The other sections are
+only used to transfer data from the emulator to the wrapper. This section has
+specific offsets into the shared memory block to allow the wrapper program to
+set everything that the emulator needs for input: key values, joystick values,
+special keys, and mouse buttons.
 
-It also includes 2 locations that the shmem target will set: the frame count,
-and the main semaphore. The semaphore is how the synchronization between the
-embedded emulator and the wrapper program takes place. The location
-``main_semaphore`` can take 3 values:
+It also includes 2 special locations: one location that the shmem target uses
+to report the current frame count (that should be treated as read-only by the
+wrapper), and one semaphore location that is writable by both the wrapper and
+emulator and used to synchronize between the two. This ``main_semaphore``
+location can take 3 values:
 
-* 0: wrapper sets the value to 0 when all input is ready to be processed for the next frame
-* 1: the emulator changes the value to 1 when the screen is ready
+* 0: wrapper sets the value to 0 when all input is ready to be processed, signaling to the emulator that it should generate the next frame
+* 1: the emulator changes the value to 1 when the next frame is ready
 * 255: exit the emulator
 
 The semaphore is initialized at 0 so the first frame of emulation is
@@ -148,7 +126,8 @@ the Atari colors. It's up to the wrapper to convert the Atari color to an RGB
 value to be displayed to the user.
 
 The sound support is still under development, so currently no sound is returned
-to the wrapper.
+to the wrapper although some space has been reserved in the shared memory
+block.
 
 As quickly an the wrapper can, it should set the ``main_semaphore`` to 0 to
 indicate to the emulator that it can start its timing loop before generating
@@ -165,7 +144,6 @@ This loop happens for the duration of the emulation, until the wrapper sets
 
 A feature of this semaphore system is that it's easy to implement a pause
 feature: simply wait to report a 0 and the emulation will be frozen in time.
-
 
 Example embedding: pyatari800
 -----------------------------
@@ -191,7 +169,53 @@ through any arguments to the atari800 core. E.g.::
     python wxatari.py jumpman.atr
 
 will run Jumpman in the wxPython window (assuming you have the ATR image of
-Jumpman as jumpman.atr, of course.  See ).
+Jumpman as jumpman.atr, of course.  See `Atarimania <http://www.atarimania.com/game-atari-400-800-xl-xe-jumpman_2713.html>`_, for example).
+
+The display code uses OpenGL 2.0 and OpenGL Shading Language (GLSL) 1.2 to
+display the emulated screen because converting the screen array to RGB and
+copying that to the screen bitmap was fast enough only when the screen wasn't
+scaled. OpenGL handles the scaling automatically, and as a bonus, GLSL allows
+the GPU to do the color conversion to RGB so the only data that has to be
+passed to the graphics card is the raw 336x240 byte array. This is much faster
+than directly copying to the screen. The screen copy version does still exist
+for reference purposes.
+
+.. note::
+
+   OpenGL 2.0 and GLSL 1.2 are very old versions, but wxPython's OpenGL support
+   seems to be limited to these old versions even if your graphics card
+   supports newer versions, which it probably does.
+
+Testing the C Code
+==================
+
+The shared memory "platform" is designed to be used as an embedded module for a
+larger program, so it's not really useful as a standalone platform for the
+atari800 executable. But for demo purposes a sample version can be compiled
+that will prove the platform is working: it will capture every display frame
+and convert the upper left corner of the screen into ASCII characters that will
+be displayed in the terminal.
+
+If you check out the code from the git repository, you will have to build a few
+files that are included with source distributions but are not in the repository
+because they are generated files.
+
+After checking out the source with::
+
+    git clone https://github.com/robmcmullen/pyatari800.git
+
+the configure script must be created with::
+
+    cd atari800/src
+    ./autogen.sh
+
+From there, it's the normal GNU-style build::
+
+    ./configure --target=shmem
+    make
+    ./atari800
+
+
 
 
 License
