@@ -7,9 +7,8 @@ allowing custom front-ends in any language that supports shared memory access.
 It provides two-way communication to the underlying emulator, sending inputs to
 the core and receiving the screen and sound information for every frame.
 
-As an example, pyatari800 is a python wrapper for the cross-platform Atari
-8-bit emulator atari800. This is a generic wrapper that can be used by any
-python program.
+As an example, pyatari800 is a python wrapper that has no user interface
+dependencies, and can be used by any python program or GUI toolkit.
 
 As a further example, there is a small demo front-end for wxPython that will
 operate on all 3 major platforms: Linux, Mac OS X, and Windows.
