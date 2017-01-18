@@ -53,9 +53,9 @@ automatic in most linux and on OS X. You may have to install the python
 development packages on linux distributions like Ubuntu or Linux Mint.
 
 Windows doesn't come with a C compiler, but happily Microsoft provides a
-cut-down version of their Visual Studio compiler just for compiling Python
-extensions! Download and install it from
-`here <https://www.microsoft.com/en-us/download/details.aspx?id=44266>`_.
+command line version of their Visual Studio compiler just for compiling Python
+extensions! Download and install it from `here
+<https://www.microsoft.com/en-us/download/details.aspx?id=44266>`_.
 
 Windows compatibility code was used in pyatari800:
 
@@ -145,8 +145,8 @@ This loop happens for the duration of the emulation, until the wrapper sets
 A feature of this semaphore system is that it's easy to implement a pause
 feature: simply wait to report a 0 and the emulation will be frozen in time.
 
-Example embedding: pyatari800
------------------------------
+Example embedding: Python and wxPython
+--------------------------------------
 
 If you check out the pyatari800 source from the git repository::
 
@@ -224,8 +224,7 @@ License
 pyatari800 (python wrapper for atari800) and atari800-shmem (shared memory
 driver for atari800)
 
-* atari800 is Copyright (c) 1995-1998 David Firth
-* and Copyright (c) 1998-2017 Atari800 development team
+* atari800 is Copyright (c) 1995-1998 David Firth and Copyright (c) 1998-2017 Atari800 development team
 * Dirent is Copyright (c) 2015 Toni Rönkkö
 * pyatari800 and atari800-shmem is Copyright (c) 2017 Rob McMullen (feedback@playermissile.com)
 
