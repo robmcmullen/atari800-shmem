@@ -47,7 +47,7 @@ class EmulatorControlBase(object):
         self.forceupdate=False
         self.delay = 5  # wxpython delays are in milliseconds
         self.screen_scale = 1
-        emulator.set_scale(1, use_alpha=False)
+        emulator.set_alpha(False)
 
         self.key_down = False
 
@@ -278,7 +278,7 @@ class OpenGLEmulatorControl(OpenGLEmulatorMixin, wxLegacyTextureCanvas, Emulator
     def __init__(self, parent, emulator, autostart=False):
         wxLegacyTextureCanvas.__init__(self, parent, pyatari800.NTSC, -1, size=(3*emulator.width, 3*emulator.height))
         EmulatorControlBase.__init__(self, emulator, autostart)
-        emulator.set_scale(1, use_alpha=True)
+        emulator.set_alpha(True)
 
     def get_raw_texture_data(self, raw=None):
         raw = np.flipud(self.emulator.get_frame())
@@ -290,6 +290,7 @@ class GLSLEmulatorControl(OpenGLEmulatorMixin, wxGLSLTextureCanvas, EmulatorCont
     def __init__(self, parent, emulator, autostart=False):
         wxGLSLTextureCanvas.__init__(self, parent, pyatari800.NTSC, -1, size=(3*emulator.width, 3*emulator.height))
         EmulatorControlBase.__init__(self, emulator, autostart)
+        emulator.set_alpha(True)
 
 
 # Not running inside the wxPython demo, so include the same basic
