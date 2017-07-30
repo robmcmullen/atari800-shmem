@@ -47,6 +47,7 @@ class EmulatorControlBase(object):
         self.forceupdate=False
         self.delay = 5  # wxpython delays are in milliseconds
         self.screen_scale = 1
+        emulator.set_scale(1, use_alpha=False)
 
         self.key_down = False
 
@@ -323,7 +324,17 @@ class EmulatorApp(wx.App):
 
         self.id_screen1x = wx.NewId()
         self.id_screen2x = wx.NewId()
+        self.id_glsl = wx.NewId()
+        self.id_opengl = wx.NewId()
+        self.id_unaccelerated = wx.NewId()
         menu = wx.Menu()
+        item = menu.AppendRadioItem(self.id_glsl, "GLSL", "Use GLSL for scalable display")
+        self.Bind(wx.EVT_MENU, self.on_menu, item)
+        item = menu.AppendRadioItem(self.id_opengl, "OpenGL", "Use OpenGL for scalable display")
+        self.Bind(wx.EVT_MENU, self.on_menu, item)
+        item = menu.AppendRadioItem(self.id_unaccelerated, "Unaccelerated", "No OpenGL acceleration")
+        self.Bind(wx.EVT_MENU, self.on_menu, item)
+        menu.AppendSeparator()
         item = menu.Append(self.id_screen1x, "Display 1x", "No magnification")
         self.Bind(wx.EVT_MENU, self.on_menu, item)
         item = menu.Append(self.id_screen2x, "Display 2x", "2x display")
@@ -345,9 +356,33 @@ class EmulatorApp(wx.App):
         self.emulator_panel = control(frame, self.emulator, autostart=True)
         frame.SetSize((800, 600))
         self.emulator_panel.SetFocus()
+
         self.SetTopWindow(frame)
         self.frame = frame
+        self.box = wx.BoxSizer(wx.VERTICAL)
+        self.box.Add(self.emulator_panel, 1, wx.EXPAND)
+        self.frame.SetSizer(self.box)
         return True
+
+    def set_glsl(self):
+        self.set_display(GLSLEmulatorControl)
+
+    def set_opengl(self):
+        self.set_display(OpenGLEmulatorControl)
+
+    def set_unaccelerated(self):
+        self.set_display(EmulatorControl)
+
+    def set_display(self, panel_cls):
+        self.emulator_panel.stop_timer()
+        self.emulator_panel.Hide()
+        self.box.Remove(self.emulator_panel)
+        self.emulator_panel.Destroy()
+        self.emulator_panel = panel_cls(self.frame, self.emulator, autostart=True)
+        self.box.Add(self.emulator_panel, 1, wx.EXPAND)
+        print self.emulator_panel
+        self.frame.Layout()
+        self.emulator_panel.SetFocus()
 
     def on_menu(self, evt):
         id = evt.GetId()
@@ -358,6 +393,12 @@ class EmulatorApp(wx.App):
             self.emulator.send_special_key(AKEY_COLDSTART)
         elif id == self.id_warmstart:
             self.emulator.send_special_key(AKEY_WARMSTART)
+        elif id == self.id_glsl:
+            self.set_glsl()
+        elif id == self.id_opengl:
+            self.set_opengl()
+        elif id == self.id_unaccelerated:
+            self.set_unaccelerated()
         elif id == self.id_screen1x:
             self.emulator_panel.set_scale(1)
         elif id == self.id_screen2x:
