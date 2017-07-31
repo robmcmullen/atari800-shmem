@@ -13,6 +13,7 @@ except ImportError:
     HAS_OPENGL = False
 
 import numpy as np
+from intscale import intscale
 
 # Include pyatari directory so that modules can be imported normally
 import sys
@@ -202,21 +203,14 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
         automatically.
         """
         self.screen_scale = scale
-        self.delay = 5 * scale * scale
-        newdims = np.asarray((self.emulator.height * scale, self.emulator.width * scale))
-        base = np.indices(newdims)
-        d = []
-        d.append(base[0]/self.screen_scale)
-        d.append(base[1]/self.screen_scale)
-        cd = np.array(d)
-        self.raw_scaled_lookup = list(cd)
-        self.stop_timer()
-        self.start_timer(True)
+        # self.delay = 5 * scale * scale
+        # self.stop_timer()
+        # self.start_timer(True)
 
     def scale_frame(self, frame):
         if self.screen_scale == 1:
             return frame
-        scaled = frame[self.raw_scaled_lookup]
+        scaled = intscale(frame, self.screen_scale)
         log.debug("panel scale: %d, %s" % (self.screen_scale, scaled.shape))
         return scaled
 
@@ -325,6 +319,7 @@ class EmulatorApp(wx.App):
 
         self.id_screen1x = wx.NewId()
         self.id_screen2x = wx.NewId()
+        self.id_screen3x = wx.NewId()
         self.id_glsl = wx.NewId()
         self.id_opengl = wx.NewId()
         self.id_unaccelerated = wx.NewId()
@@ -339,6 +334,8 @@ class EmulatorApp(wx.App):
         item = menu.Append(self.id_screen1x, "Display 1x", "No magnification")
         self.Bind(wx.EVT_MENU, self.on_menu, item)
         item = menu.Append(self.id_screen2x, "Display 2x", "2x display")
+        self.Bind(wx.EVT_MENU, self.on_menu, item)
+        item = menu.Append(self.id_screen3x, "Display 3x", "3x display")
         self.Bind(wx.EVT_MENU, self.on_menu, item)
         menuBar.Append(menu, "&Screen")
 
@@ -404,6 +401,8 @@ class EmulatorApp(wx.App):
             self.emulator_panel.set_scale(1)
         elif id == self.id_screen2x:
             self.emulator_panel.set_scale(2)
+        elif id == self.id_screen3x:
+            self.emulator_panel.set_scale(3)
         elif id == self.id_pause:
             if self.emulator_panel.is_paused:
                 self.emulator_panel.on_start()
