@@ -596,13 +596,19 @@ def get_offsets(container, prefix, d):
             print("Container: %s" % k)
             get_offsets(v, prefix + "%s_" % k, d)
 
+def parse_atari800(data):
+    a8save = init_atari800_struct()
+    test = a8save.parse(data)
+    offsets = {}
+    get_offsets(test, "", offsets)
+    return offsets
+
 
 if __name__ == "__main__":
     import sys
     with open(sys.argv[1], "rb") as fh:
         data = fh.read()
-        a8save = init_atari800_struct()
-        test = a8save.parse(data)
+        test = parse_atari800(data)
         comments = {}
         get_offsets(test, "", comments)
         print sorted(list(comments.items()))

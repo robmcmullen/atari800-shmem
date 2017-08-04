@@ -226,3 +226,12 @@ class Atari800(object):
     def set_start(self, state):
         self.exchange_input[0].start = state
 
+
+def parse_atari800(data):
+    from save_state_parser import init_atari800_struct, get_offsets
+
+    a8save = init_atari800_struct()
+    test = a8save.parse(data)
+    offsets = {}
+    get_offsets(test, "", offsets)
+    return offsets
