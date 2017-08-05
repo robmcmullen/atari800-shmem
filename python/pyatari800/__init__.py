@@ -233,5 +233,6 @@ def parse_atari800(data):
     a8save = init_atari800_struct()
     test = a8save.parse(data)
     offsets = {}
-    get_offsets(test, "", offsets)
-    return offsets
+    segments = []
+    get_offsets(test, "", offsets, segments)
+    return offsets, segments

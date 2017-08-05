@@ -43,6 +43,7 @@ def init_atari800_struct():
         "verbose_offset" / Tell,
         "verbose" / Int8ul,
 
+        "machine_type_segment" / Tell,
         "tv_mode_offset" / Tell,
         "tv_mode" / Int8ul,
         "machine_type_offset" / Tell,
@@ -106,7 +107,10 @@ def init_atari800_struct():
         "SIO_8_offset" / Tell,
         "SIO_8" / Sio,
 
+        "machine_type_segment_end" / Tell,
+
         # ANTIC
+        "ANTIC_segment" / Tell,
         "ANTIC_offset" / Tell,
         "ANTIC" / Struct(
             "DMACTL_offset" / Tell,
@@ -150,8 +154,10 @@ def init_atari800_struct():
             "ypos_offset" / Tell,
             "ypos" / Int32sl,
             ),
+        "ANTIC_segment_end" / Tell,
 
         #CPU
+        "CPU_segment" / Tell,
         "CPU_offset" / Tell,
         "CPU" / Struct(
             "A_offset" / Tell,
@@ -169,6 +175,7 @@ def init_atari800_struct():
             ),
 
         #Memory
+        "Extra_memory_segment" / Tell,
         "AXLON_offset" / Tell,
         "AXLON" / If(this.machine_type == 0,
             Struct(
@@ -195,29 +202,44 @@ def init_atari800_struct():
                 )
             ),
 
+        "ram_segment" / Tell,
         "ram_offset" / Tell,
         "ram" / Struct(
             "base_ram_size_kb_offset" / Tell,
             "base_ram_size_kb" / Int32sl,
+            "ram_segment" / Tell,
             "ram_offset" / Tell,
             "ram" / Bytes(65536),
+            "ram_segment_end" / Tell,
+            "ram_attrib_segment" / Tell,
             "attrib_offset" / Tell,
             "attrib" / Bytes(65536),
+            "ram_attrib_segment_end" / Tell,
             ),
 
         "ram_xlxe_offset" / Tell,
         "ram_xlxe" / If(this.machine_type == Atari800_MACHINE_XLXE,
             Struct(
+                "basic_$A000_segment" / Tell,
                 "basic_offset" / Tell,
                 "basic" / If(this._.verbose != 0, Bytes(8192)),
+                "basic_$A000_segment_end" / Tell,
+                "under_cartA0BF_$A000_segment" / Tell,
                 "under_cartA0BF_offset" / Tell,
                 "under_cartA0BF" / Bytes(8192),
+                "under_cartA0BF_$A000_segment_end" / Tell,
+                "os_offset_$C000_segment" / Tell,
                 "os_offset" / Tell,
                 "os" / If(this._.verbose != 0, Bytes(16384)),
+                "os_offset_$C000_segment_end" / Tell,
+                "under_atarixl_os_offset_$C000_segment" / Tell,
                 "under_atarixl_os_offset" / Tell,
                 "under_atarixl_os" / Bytes(16384),
+                "under_atarixl_os_offset_$C000_segment" / Tell,
+                "xegame_offset_$E000_segment_end" / Tell,
                 "xegame_offset" / Tell,
                 "xegame" / If(this._.verbose != 0, Bytes(0x2000)),
+                "xegame_offset_$E000_segment_end" / Tell,
                 )
             ),
 
@@ -263,10 +285,14 @@ def init_atari800_struct():
                 "memory" / If(this.enable != 0, Bytes(0x800)),
                 )
             ),
+        "ram_segment_end" / Tell,
 
+        "PC_segment" / Tell,
         "PC_offset" / Tell,
         "PC" / Int16ul,
+        "PC_segment_end" / Tell,
 
+        "GTIA_segment" / Tell,
         "GTIA_offset" / Tell,
         "GTIA" / Struct(
             "HPOSP0_offset" / Tell,
@@ -363,7 +389,9 @@ def init_atari800_struct():
             "TRIG_latch_offset" / Tell,
             "TRIG_latch" / Bytes(4),
             ),
+        "GTIA_segment_end" / Tell,
 
+        "PIA_segment" / Tell,
         "PIA_offset" / Tell,
         "PIA" / Struct(
             "PACTL_offset" / Tell,
@@ -393,7 +421,9 @@ def init_atari800_struct():
             "CB2_pospending_offset" / Tell,
             "CB2_pospending" / Int32sl,
             ),
+        "PIA_segment_end" / Tell,
 
+        "POKEY_segment" / Tell,
         "POKEY_offset" / Tell,
         "POKEY" / Struct(
             "KBCODE_offset" / Tell,
@@ -431,7 +461,9 @@ def init_atari800_struct():
             "Base_mult" / Int32sl,
 
             ),
+        "POKEY_segment_end" / Tell,
 
+        "Extensions_segment" / Tell,
         "XEP80_enabled_offset" / Tell,
         "XEP80_enabled" / Int8ul,
         "XEP80_offset" / Tell,
@@ -582,26 +614,44 @@ def init_atari800_struct():
                 "VOTRAXSND_busy" / Int32sl,
                 )
             ),
+        "Extensions_segment_end" / Tell,
 
         )
 
     return a8save
 
-def get_offsets(container, prefix, d):
+def get_offsets(container, prefix, comments, segments):
+    start = 0
+    name = "data"
+    origin = 0
     for k,v in container.items():
         if k.endswith("_offset"):
-            print(prefix + k[:-7], v)
-            d[v] = prefix + k[:-7]
+            print("offset" + prefix + k[:-7], v)
+            comments[v] = prefix + k[:-7]
+        elif k.endswith("_segment"):
+            args = k.split("_")
+            args.pop()
+            if args[-1].startswith("$"):
+                origin = int(args.pop()[1:], 16)
+            else:
+                origin = 0
+            print("segment:" + prefix + k[:-7], v)
+            start = v
+            name = " ".join(args)
+        elif k.endswith("_segment_end"):
+            segments.append((start, v, origin, name))
+            print("end segment:" + prefix + name, v, segments[-1])
         elif type(v) == Container:
             print("Container: %s" % k)
-            get_offsets(v, prefix + "%s_" % k, d)
+            get_offsets(v, prefix + "%s_" % k, comments, segments)
 
 def parse_atari800(data):
     a8save = init_atari800_struct()
     test = a8save.parse(data)
     offsets = {}
-    get_offsets(test, "", offsets)
-    return offsets
+    segments = []
+    get_offsets(test, "", offsets, segments)
+    return offsets, segments
 
 
 if __name__ == "__main__":
