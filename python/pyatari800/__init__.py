@@ -31,7 +31,7 @@ def debug_video(mem):
         offset += 336;
 
 def create_exchange():
-    shared = RawArray(ctypes.c_ubyte, 100000)
+    shared = RawArray(ctypes.c_ubyte, 100000 + 210000)
     if debug_frames:
         pointer = ctypes.byref(shared)
         print pointer
@@ -97,13 +97,22 @@ class Atari800(object):
     def __init__(self, args=None):
         self.args = self.normalize_args(args)
         self.exchange = create_exchange()
+        print("exchange: %s" % ctypes.byref(self.exchange))
         self.exchange_input = self.create_input_view(self.exchange)
         self.process = None
         self.width = 336
         self.height = 240
-        self.raw = np.frombuffer(self.exchange, dtype=np.uint8, count=336*240, offset=128)
+        raw_offset = 128
+        self.raw = np.frombuffer(self.exchange, dtype=np.uint8, count=336*240, offset=raw_offset)
+        print("raw offset=%d loc: %x" % (raw_offset, self.raw.__array_interface__['data'][0]))
         self.raw.shape = (240, 336)
-        self.audio = np.frombuffer(self.exchange, dtype=np.uint8, count=2048, offset=128 + np.alen(self.raw))
+        audio_offset = 128 + (240*336)
+        self.audio = np.frombuffer(self.exchange, dtype=np.uint8, count=2048, offset=audio_offset)
+        print("audio offset=%d loc: %x" % (audio_offset, self.audio.__array_interface__['data'][0]))
+        state_offset = audio_offset + 2048
+        self.state = np.frombuffer(self.exchange, dtype=np.uint8, count=210000, offset=state_offset)
+        print("state offset=%d loc: %x" % (state_offset, self.state.__array_interface__['data'][0]))
+
         self.frame_count = 0
         self.rmap, self.gmap, self.bmap = ntsc_color_map()
         self.frame_event = []

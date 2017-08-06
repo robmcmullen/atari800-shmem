@@ -17,6 +17,7 @@ extensions = [
     "src/shmem/video.c",
     "src/shmem/init.c",
     "src/shmem/sound.c",
+    "src/shmem/statesav.c",
     "src/afile.c",
     "src/antic.c",
     "src/atari.c",

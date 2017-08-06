@@ -113,6 +113,13 @@ unsigned char *SHMEM_GetVideoArray(void) {
     return &shared_memory[SHMEM_VIDEO_OFFSET];
 }
 
+unsigned char *SHMEM_GetStateSaveArray(void) {
+    printf("GetStateSaveArray: %d, %lx", SHMEM_STATE_OFFSET, (unsigned long int)&shared_memory[0]);
+    shared_memory[SHMEM_STATE_OFFSET] = 0xbe;
+    shared_memory[SHMEM_STATE_OFFSET+1] = 0xef;
+    return &shared_memory[SHMEM_STATE_OFFSET];
+}
+
 /*
 vim:ts=4:sw=4:
 */

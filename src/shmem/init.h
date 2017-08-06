@@ -6,6 +6,7 @@
 #ifdef SOUND
 #include "sound.h"
 #endif
+#include "../statesav.h"
 
 #define Screen_USABLE_WIDTH 336
 
@@ -15,7 +16,8 @@
 #define SHMEM_VIDEO_SIZE (Screen_USABLE_WIDTH * Screen_HEIGHT)
 #define SHMEM_SOUND_OFFSET (SHMEM_VIDEO_OFFSET + SHMEM_VIDEO_SIZE)
 #define SHMEM_SOUND_SIZE 2048
-#define SHMEM_TOTAL_SIZE (SHMEM_INPUT_SIZE + SHMEM_SOUND_SIZE + SHMEM_VIDEO_SIZE)
+#define SHMEM_STATE_OFFSET (SHMEM_SOUND_OFFSET + SHMEM_SOUND_SIZE)
+#define SHMEM_TOTAL_SIZE (SHMEM_INPUT_SIZE + SHMEM_SOUND_SIZE + SHMEM_VIDEO_SIZE + STATESAV_MAX_SIZE)
 
 extern unsigned char *shared_memory;
 
@@ -56,6 +58,7 @@ input_template_t *SHMEM_GetInputArraySnapshot(void);
 Sound_setup_t *SHMEM_GetSoundArray(void);
 #endif
 unsigned char *SHMEM_GetVideoArray(void);
+unsigned char *SHMEM_GetStateSaveArray(void);
 
 unsigned char *SHMEM_DebugGetFakeMemory(void);
 typedef void (*callback_ptr)(unsigned char *);

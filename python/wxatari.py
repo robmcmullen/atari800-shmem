@@ -140,15 +140,21 @@ class EmulatorControlBase(object):
         raise NotImplementedError
 
     def show_audio(self):
-        import binascii
-        a = binascii.hexlify(self.emulator.audio)
-        #print a
+        #import binascii
+        #a = binascii.hexlify(self.emulator.audio)
+        print np.where(self.emulator.audio > 0)
+
+    def save_history(self):
+        if self.emulator.frame_count % 10 == 0:
+            d = self.emulator.state
+            print "history at %d: %d %s" % (self.emulator.frame_count, len(d), d)
 
     def on_timer(self, evt):
         if self.timer.IsRunning():
             if self.emulator.is_frame_ready():
                 self.show_frame()
                 self.show_audio()
+                self.save_history()
                 self.emulator.next_frame()
             self.process_key_state()
         evt.Skip()

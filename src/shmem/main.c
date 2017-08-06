@@ -41,6 +41,7 @@
 #include "shmem/init.h"
 #include "shmem/input.h"
 #include "shmem/video.h"
+#include "shmem/statesav.h"
 
 extern int debug_sound;
 
@@ -154,6 +155,7 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 		INPUT_key_code = PLATFORM_Keyboard();
 		SHMEM_Mouse();
 		Atari800_Frame();
+		SHMEM_StateSave();
 		if (Atari800_display_screen)
 			PLATFORM_DisplayScreen();
 		input->main_semaphore = 1; /* screen ready! */
