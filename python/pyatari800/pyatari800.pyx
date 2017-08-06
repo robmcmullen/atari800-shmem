@@ -16,7 +16,7 @@ cdef char ** to_cstring_array(list_str):
 
 pycallback = None
 
-debug_frames = True
+debug_frames = False
 
 cdef void callback(unsigned char *mem):
     cdef long ptr = <long>mem
