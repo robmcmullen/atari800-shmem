@@ -103,14 +103,15 @@ class Atari800(object):
         self.width = 336
         self.height = 240
         self.state_size = 210000
-        raw_offset = 128
-        self.raw = np.frombuffer(self.exchange, dtype=np.uint8, count=336*240, offset=raw_offset)
-        print("raw offset=%d loc: %x" % (raw_offset, self.raw.__array_interface__['data'][0]))
+        self.raw_offset = 128
+        self.raw = np.frombuffer(self.exchange, dtype=np.uint8, count=336*240, offset=self.raw_offset)
+        print("raw offset=%d loc: %x" % (self.raw_offset, self.raw.__array_interface__['data'][0]))
         self.raw.shape = (240, 336)
-        audio_offset = 128 + (240*336)
-        self.audio = np.frombuffer(self.exchange, dtype=np.uint8, count=2048, offset=audio_offset)
-        print("audio offset=%d loc: %x" % (audio_offset, self.audio.__array_interface__['data'][0]))
-        self.state_offset = audio_offset + 2048
+        self.audio_offset = 128 + (240*336)
+        self.raw_end = self.audio_offset
+        self.audio = np.frombuffer(self.exchange, dtype=np.uint8, count=2048, offset=self.audio_offset)
+        print("audio offset=%d loc: %x" % (self.audio_offset, self.audio.__array_interface__['data'][0]))
+        self.state_offset = self.audio_offset + 2048
         self.state = np.frombuffer(self.exchange, dtype=np.uint8, count=self.state_size, offset=self.state_offset)
         print("state offset=%d loc: %x" % (self.state_offset, self.state.__array_interface__['data'][0]))
         self.state_end = self.state_offset + self.state_size
@@ -164,6 +165,11 @@ class Atari800(object):
                 break
             time.sleep(0.001)
 
+    def finalize_frame(self):
+        # Must be called once after is_frame_ready returns True so
+        # housekeeping functions can be called.
+        self.save_history()
+
     def debug_video(self):
         debug_video(self.exchange)
 
@@ -183,15 +189,46 @@ class Atari800(object):
         self.frame_event = still_waiting
 
     def save_history(self):
+        # History is saved in a big list, which will waste space for empty
+        # entries but makes things extremely easy to manage. Simply delete
+        # a history entry by setting it to NONE.
         if self.frame_count % 10 == 0:
             d = self.exchange_array.copy()
             print "history at %d: %d %s" % (self.frame_count, len(d), d[self.state_offset])
-            self.history.append((self.frame_count, d))
+        else:
+            d = None
+        self.history.append(d)
 
-    def print_history(self, index):
-        frame_number, d = self.history[index]
+    def print_history(self, frame_number):
+        d = self.history[frame_number]
         state = d[self.state_offset:self.state_end]
         print "history at %d: %d %s" % (frame_number, len(d), d[self.state_offset])
+
+    def get_previous_history(self, frame_cursor):
+        n = frame_cursor - 1
+        while n > 0:
+            if self.history[n] is not None:
+                return n
+            n -= 1
+        raise IndexError("No previous frame")
+
+    def get_next_history(self, frame_cursor):
+        n = frame_cursor + 1
+        while n <= self.frame_count:
+            if self.history[n] is not None:
+                return n
+            n += 1
+        raise IndexError("No next frame")
+
+    def get_raw_screen(self, frame_number=-1):
+        if frame_number < 0:
+            raw = self.raw
+        else:
+            state = self.history[frame_number]
+            raw = state[self.raw_offset:self.raw_end]
+            raw.shape = (240, 336)
+        print "get_raw_screen", frame_number, raw
+        return raw
 
     def set_alpha(self, use_alpha):
         if use_alpha:
@@ -202,15 +239,15 @@ class Atari800(object):
             components = 3
         self.screen = np.empty((self.height, self.width, components), np.uint8)
 
-    def get_frame_3(self, scale=1):
-        raw = self.raw
+    def get_frame_3(self, frame_number=-1):
+        raw = self.get_raw_screen(frame_number)
         self.screen[:,:,0] = self.rmap[raw]
         self.screen[:,:,1] = self.gmap[raw]
         self.screen[:,:,2] = self.bmap[raw]
         return self.screen
 
-    def get_frame_4(self, scale=1):
-        raw = self.raw
+    def get_frame_4(self, frame_number=-1):
+        raw = self.get_raw_screen(frame_number)
         self.screen[:,:,0] = self.rmap[raw]
         self.screen[:,:,1] = self.gmap[raw]
         self.screen[:,:,2] = self.bmap[raw]

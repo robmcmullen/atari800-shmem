@@ -87,7 +87,10 @@ class EmulatorControlBase(object):
         log.debug("key down! key=%s mod=%s" % (evt.GetKeyCode(), evt.GetModifiers()))
         key = evt.GetKeyCode()
         mod = evt.GetModifiers()
-        if mod == wx.MOD_CONTROL:
+        if mod == wx.MOD_ALT:
+            self.frame.on_emulator_command_key(evt)
+            return
+        elif mod == wx.MOD_CONTROL:
             akey = self.wx_to_akey_ctrl.get(key, None)
         else:
             akey = self.wx_to_akey.get(key, None)
@@ -137,7 +140,7 @@ class EmulatorControlBase(object):
             size  = self.GetClientSizeTuple()
             self._buffer = wx.EmptyBitmap(*size)
 
-    def show_frame(self):
+    def show_frame(self, frame_number=-1):
         raise NotImplementedError
 
     def show_audio(self):
@@ -148,9 +151,9 @@ class EmulatorControlBase(object):
     def on_timer(self, evt):
         if self.timer.IsRunning():
             if self.emulator.is_frame_ready():
+                self.emulator.finalize_frame()
                 self.show_frame()
                 self.show_audio()
-                self.emulator.save_history()
                 self.emulator.next_frame()
             self.process_key_state()
         evt.Skip()
@@ -216,17 +219,17 @@ class EmulatorControl(wx.Panel, EmulatorControlBase):
         log.debug("panel scale: %d, %s" % (self.screen_scale, scaled.shape))
         return scaled
 
-    def show_frame(self):
-        if self.forceupdate:
+    def show_frame(self, frame_number=-1):
+        if self.forceupdate or frame_number >= 0:
             dc = wx.ClientDC(self)
-            self.updateDrawing(dc)
+            self.updateDrawing(dc, frame_number)
         else:
             #self.updateDrawing()
             self.Refresh()
 
-    def updateDrawing(self,dc):
+    def updateDrawing(self, dc, frame_number=-1):
         #dc=wx.BufferedDC(wx.ClientDC(self), self._buffer)
-        frame = self.emulator.get_frame(self.screen_scale)
+        frame = self.emulator.get_frame(frame_number)
         bmp = self.get_bitmap(frame)
         dc.DrawBitmap(bmp, 0,0, True)
 
@@ -245,14 +248,14 @@ class OpenGLEmulatorMixin(object):
     def bind_events(self):
         pass
 
-    def get_raw_texture_data(self, raw=None):
-        raw = np.flipud(self.emulator.raw.reshape((240, 336)))
+    def get_raw_texture_data(self, frame_number=-1):
+        raw = np.flipud(self.emulator.get_frame(frame_number))
         return raw
 
-    def show_frame(self):
+    def show_frame(self, frame_number=-1):
         if not self.finished_init:
             return
-        frame = self.calc_texture_data()
+        frame = self.calc_texture_data(frame_number)
         try:
             self.update_texture(self.display_texture, frame)
         except Exception, e:
@@ -276,8 +279,8 @@ class OpenGLEmulatorControl(OpenGLEmulatorMixin, wxLegacyTextureCanvas, Emulator
         EmulatorControlBase.__init__(self, parent, emulator, autostart)
         emulator.set_alpha(True)
 
-    def get_raw_texture_data(self, raw=None):
-        raw = np.flipud(self.emulator.get_frame())
+    def get_raw_texture_data(self, frame_number=None):
+        raw = np.flipud(self.emulator.get_frame(frame_number))
         log.debug("raw data for legacy version: %s" % str(raw.shape))
         return raw
 
@@ -361,6 +364,8 @@ class EmulatorFrame(wx.Frame):
         self.box.Add(self.emulator_panel, 1, wx.EXPAND)
         self.SetSizer(self.box)
 
+        self.frame_cursor = -1
+
     def set_glsl(self):
         self.set_display(GLSLEmulatorControl)
 
@@ -374,12 +379,15 @@ class EmulatorFrame(wx.Frame):
         self.emulator_panel.stop_timer()
         self.emulator_panel.Hide()
         self.box.Remove(self.emulator_panel)
+        paused = self.emulator_panel.is_paused
         self.emulator_panel.Destroy()
-        self.emulator_panel = panel_cls(self, self.emulator, autostart=True)
+        self.emulator_panel = panel_cls(self, self.emulator)
         self.box.Add(self.emulator_panel, 1, wx.EXPAND)
         print self.emulator_panel
         self.Layout()
         self.emulator_panel.SetFocus()
+        if not paused:
+            self.emulator_panel.on_start()
 
     def on_menu(self, evt):
         id = evt.GetId()
@@ -408,13 +416,55 @@ class EmulatorFrame(wx.Frame):
                 self.pause_item.SetItemLabel("Pause")
                 self.SetStatusText("")
             else:
-                self.emulator_panel.on_pause()
-                self.pause_item.SetItemLabel("Resume")
-                self.show_frame_number()
+                self.pause()
+
+    def on_emulator_command_key(self, evt):
+        key = evt.GetKeyCode()
+        mod = evt.GetModifiers()
+        print("emu key: %s %s" % (key, mod))
+        if mod == wx.MOD_ALT: # should already be alt when passed here
+            if key == wx.WXK_LEFT:
+                if not self.emulator_panel.is_paused:
+                    self.pause()
+                else:
+                    self.history_previous()
+            elif key == wx.WXK_RIGHT:
+                if not self.emulator_panel.is_paused:
+                    self.pause()
+                else:
+                    self.history_next()
+
+    def pause(self):
+        self.emulator_panel.on_pause()
+        self.pause_item.SetItemLabel("Resume")
+        self.frame_cursor = self.emulator.frame_count
+        self.update_ui()
+    
+    def history_previous(self):
+        try:
+            self.frame_cursor = self.emulator.get_previous_history(self.frame_cursor)
+            #self.emulator.restore_history(frame_number)
+        except IndexError:
+            return
+        self.emulator_panel.show_frame(self.frame_cursor)
+        self.update_ui()
+    
+    def history_next(self):
+        try:
+            self.frame_cursor = self.emulator.get_next_history(self.frame_cursor)
+            #self.emulator.restore_history(frame_number)
+        except IndexError:
+            return
+        self.emulator_panel.show_frame(self.frame_cursor)
+        self.update_ui()
 
     def show_frame_number(self):
-        self.SetStatusText("Paused: frame=%d" % self.emulator.frame_count)
+        text = "Paused: %d frames, showing %d" % (self.emulator.frame_count, self.frame_cursor)
+        print(text)
+        self.SetStatusText(text)
 
+    def update_ui(self):
+        self.show_frame_number()
 
     def on_close_frame(self, evt):
         self.emulator_panel.end_emulation()
