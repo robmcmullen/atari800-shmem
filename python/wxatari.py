@@ -32,7 +32,8 @@ log = logging.getLogger(__name__)
 
 
 class EmulatorControlBase(object):
-    def __init__(self, emulator, autostart=False):
+    def __init__(self, parent, emulator, autostart=False):
+        self.frame = parent
         self.emulator = emulator
 
         self.timer = wx.Timer(self)
@@ -144,17 +145,12 @@ class EmulatorControlBase(object):
         #a = binascii.hexlify(self.emulator.audio)
         print np.where(self.emulator.audio > 0)
 
-    def save_history(self):
-        if self.emulator.frame_count % 10 == 0:
-            d = self.emulator.state
-            print "history at %d: %d %s" % (self.emulator.frame_count, len(d), d)
-
     def on_timer(self, evt):
         if self.timer.IsRunning():
             if self.emulator.is_frame_ready():
                 self.show_frame()
                 self.show_audio()
-                self.save_history()
+                self.emulator.save_history()
                 self.emulator.next_frame()
             self.process_key_state()
         evt.Skip()
@@ -192,7 +188,7 @@ class EmulatorControlBase(object):
 class EmulatorControl(wx.Panel, EmulatorControlBase):
     def __init__(self, parent, emulator, autostart=False):
         wx.Panel.__init__(self, parent, -1, size=(emulator.width, emulator.height))
-        EmulatorControlBase.__init__(self, emulator, autostart)
+        EmulatorControlBase.__init__(self, parent, emulator, autostart)
 
     def get_bitmap(self, frame):
         scaled = self.scale_frame(frame)
@@ -277,7 +273,7 @@ class OpenGLEmulatorMixin(object):
 class OpenGLEmulatorControl(OpenGLEmulatorMixin, wxLegacyTextureCanvas, EmulatorControlBase):
     def __init__(self, parent, emulator, autostart=False):
         wxLegacyTextureCanvas.__init__(self, parent, pyatari800.NTSC, -1, size=(3*emulator.width, 3*emulator.height))
-        EmulatorControlBase.__init__(self, emulator, autostart)
+        EmulatorControlBase.__init__(self, parent, emulator, autostart)
         emulator.set_alpha(True)
 
     def get_raw_texture_data(self, raw=None):
@@ -289,20 +285,20 @@ class OpenGLEmulatorControl(OpenGLEmulatorMixin, wxLegacyTextureCanvas, Emulator
 class GLSLEmulatorControl(OpenGLEmulatorMixin, wxGLSLTextureCanvas, EmulatorControlBase):
     def __init__(self, parent, emulator, autostart=False):
         wxGLSLTextureCanvas.__init__(self, parent, pyatari800.NTSC, -1, size=(3*emulator.width, 3*emulator.height))
-        EmulatorControlBase.__init__(self, emulator, autostart)
+        EmulatorControlBase.__init__(self, parent, emulator, autostart)
         emulator.set_alpha(True)
 
 
 # Not running inside the wxPython demo, so include the same basic
 # framework.
-class EmulatorApp(wx.App):
+class EmulatorFrame(wx.Frame):
     parsed_args = []
     options = {}
 
-    def OnInit(self):
-        frame = wx.Frame(None, -1, "wxPython atari800 test", pos=(50,50),
+    def __init__(self):
+        wx.Frame.__init__(self, None, -1, "wxPython atari800 test", pos=(50,50),
                          size=(200,100), style=wx.DEFAULT_FRAME_STYLE)
-        frame.CreateStatusBar()
+        self.CreateStatusBar()
 
         menuBar = wx.MenuBar()
         menu = wx.Menu()
@@ -345,9 +341,9 @@ class EmulatorApp(wx.App):
         self.Bind(wx.EVT_MENU, self.on_menu, item)
         menuBar.Append(menu, "&Screen")
 
-        frame.SetMenuBar(menuBar)
-        frame.Show(True)
-        frame.Bind(wx.EVT_CLOSE, self.on_close_frame)
+        self.SetMenuBar(menuBar)
+        self.Show(True)
+        self.Bind(wx.EVT_CLOSE, self.on_close_frame)
 
         self.emulator = pyatari800.Atari800(self.parsed_args)
         self.emulator.multiprocess()
@@ -357,16 +353,13 @@ class EmulatorApp(wx.App):
             control = OpenGLEmulatorControl
         else:
             control = EmulatorControl
-        self.emulator_panel = control(frame, self.emulator, autostart=True)
-        frame.SetSize((800, 600))
+        self.emulator_panel = control(self, self.emulator, autostart=True)
+        self.SetSize((800, 600))
         self.emulator_panel.SetFocus()
 
-        self.SetTopWindow(frame)
-        self.frame = frame
         self.box = wx.BoxSizer(wx.VERTICAL)
         self.box.Add(self.emulator_panel, 1, wx.EXPAND)
-        self.frame.SetSizer(self.box)
-        return True
+        self.SetSizer(self.box)
 
     def set_glsl(self):
         self.set_display(GLSLEmulatorControl)
@@ -382,17 +375,17 @@ class EmulatorApp(wx.App):
         self.emulator_panel.Hide()
         self.box.Remove(self.emulator_panel)
         self.emulator_panel.Destroy()
-        self.emulator_panel = panel_cls(self.frame, self.emulator, autostart=True)
+        self.emulator_panel = panel_cls(self, self.emulator, autostart=True)
         self.box.Add(self.emulator_panel, 1, wx.EXPAND)
         print self.emulator_panel
-        self.frame.Layout()
+        self.Layout()
         self.emulator_panel.SetFocus()
 
     def on_menu(self, evt):
         id = evt.GetId()
         if id == wx.ID_EXIT:
             self.emulator_panel.end_emulation()
-            self.frame.Close(True)
+            self.Close(True)
         elif id == self.id_coldstart:
             self.emulator.send_special_key(AKEY_COLDSTART)
         elif id == self.id_warmstart:
@@ -413,9 +406,14 @@ class EmulatorApp(wx.App):
             if self.emulator_panel.is_paused:
                 self.emulator_panel.on_start()
                 self.pause_item.SetItemLabel("Pause")
+                self.SetStatusText("")
             else:
                 self.emulator_panel.on_pause()
                 self.pause_item.SetItemLabel("Resume")
+                self.show_frame_number()
+
+    def show_frame_number(self):
+        self.SetStatusText("Paused: frame=%d" % self.emulator.frame_count)
 
 
     def on_close_frame(self, evt):
@@ -433,6 +431,8 @@ if __name__ == '__main__':
     parser.add_argument("--bitmap", action="store_false", dest="opengl", default=True, help="Use bitmap scaling instead of OpenGL")
     parser.add_argument("--opengl", action="store_true", dest="opengl", default=True, help="Use OpenGL scaling")
     parser.add_argument("--glsl", action="store_true", dest="glsl", default=False, help="Use GLSL scaling")
-    EmulatorApp.options, EmulatorApp.parsed_args = parser.parse_known_args()
-    app = EmulatorApp()
+    EmulatorFrame.options, EmulatorFrame.parsed_args = parser.parse_known_args()
+    app = wx.App(False)
+    frame = EmulatorFrame()
+    frame.Show()
     app.MainLoop()
