@@ -146,7 +146,8 @@ class EmulatorControlBase(object):
     def show_audio(self):
         #import binascii
         #a = binascii.hexlify(self.emulator.audio)
-        print np.where(self.emulator.audio > 0)
+        #print np.where(self.emulator.audio > 0)
+        pass
 
     def on_timer(self, evt):
         if self.timer.IsRunning():
@@ -169,6 +170,12 @@ class EmulatorControlBase(object):
     def stop_timer(self):
         if self.timer.IsRunning():
             self.timer.Stop()
+
+            # There is one more frame in the queue
+            self.emulator.wait_for_frame()
+            self.emulator.finalize_frame()
+            self.show_frame()
+            self.show_audio()
 
     def join_process(self):
         self.stop_timer()
@@ -412,9 +419,7 @@ class EmulatorFrame(wx.Frame):
             self.emulator_panel.set_scale(3)
         elif id == self.id_pause:
             if self.emulator_panel.is_paused:
-                self.emulator_panel.on_start()
-                self.pause_item.SetItemLabel("Pause")
-                self.SetStatusText("")
+                self.restart()
             else:
                 self.pause()
 
@@ -433,6 +438,17 @@ class EmulatorFrame(wx.Frame):
                     self.pause()
                 else:
                     self.history_next()
+            elif key == wx.WXK_SPACE:
+                if self.emulator_panel.is_paused:
+                    self.restart()
+                else:
+                    self.pause()
+
+    def restart(self):
+        self.emulator_panel.on_start()
+        self.pause_item.SetItemLabel("Pause")
+        self.frame_cursor = -1
+        self.SetStatusText("")
 
     def pause(self):
         self.emulator_panel.on_pause()
@@ -441,6 +457,8 @@ class EmulatorFrame(wx.Frame):
         self.update_ui()
     
     def history_previous(self):
+        if self.frame_cursor < 0:
+            self.frame_cursor = self.emulator.frame_count
         try:
             self.frame_cursor = self.emulator.get_previous_history(self.frame_cursor)
             #self.emulator.restore_history(frame_number)
@@ -450,16 +468,18 @@ class EmulatorFrame(wx.Frame):
         self.update_ui()
     
     def history_next(self):
+        if self.frame_cursor < 0:
+            return
         try:
             self.frame_cursor = self.emulator.get_next_history(self.frame_cursor)
             #self.emulator.restore_history(frame_number)
         except IndexError:
-            return
+            self.frame_cursor = -1
         self.emulator_panel.show_frame(self.frame_cursor)
         self.update_ui()
 
     def show_frame_number(self):
-        text = "Paused: %d frames, showing %d" % (self.emulator.frame_count, self.frame_cursor)
+        text = "Paused: %d frames, showing %d" % (self.emulator.frame_count, self.frame_cursor if self.frame_cursor > 0 else self.emulator.frame_count)
         print(text)
         self.SetStatusText(text)
 

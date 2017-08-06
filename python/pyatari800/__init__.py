@@ -199,6 +199,9 @@ class Atari800(object):
             d = None
         self.history.append(d)
 
+    def restore_history(self):
+        pass
+
     def print_history(self, frame_number):
         d = self.history[frame_number]
         state = d[self.state_offset:self.state_end]
@@ -227,7 +230,7 @@ class Atari800(object):
             state = self.history[frame_number]
             raw = state[self.raw_offset:self.raw_end]
             raw.shape = (240, 336)
-        print "get_raw_screen", frame_number, raw
+        #print "get_raw_screen", frame_number, raw
         return raw
 
     def set_alpha(self, use_alpha):
