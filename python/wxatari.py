@@ -386,10 +386,10 @@ class EmulatorFrame(wx.Frame):
         self.set_display(EmulatorControl)
 
     def set_display(self, panel_cls):
+        paused = self.emulator_panel.is_paused
         self.emulator_panel.stop_timer()
         self.emulator_panel.Hide()
         self.box.Remove(self.emulator_panel)
-        paused = self.emulator_panel.is_paused
         self.emulator_panel.Destroy()
         self.emulator_panel = panel_cls(self, self.emulator)
         self.box.Add(self.emulator_panel, 1, wx.EXPAND)
