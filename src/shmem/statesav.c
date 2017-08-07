@@ -31,5 +31,23 @@
 #include "shmem/init.h"
 
 void SHMEM_StateSave() {
+#ifdef DEBUG
+	int state = FALSE;
+	unsigned char *plainmembuf;
+	int i;
+
+	state = StateSav_SaveAtariState(NULL, NULL, 0);
+	printf("state save: %d = ", state);
+	plainmembuf = (unsigned char *)SHMEM_GetStateSaveArray();
+	for (i=0; i<16; i++) {
+		printf("%d ", plainmembuf[i]);
+	}
+	printf("\n");
+	StateSav_ReadAtariState(NULL, NULL);
+#endif
 	StateSav_SaveAtariState(NULL, NULL, 0);
+}
+
+void SHMEM_StateLoad() {
+	StateSav_ReadAtariState(NULL, NULL);
 }

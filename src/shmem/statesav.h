@@ -6,5 +6,6 @@
 #include "config.h"
 
 void SHMEM_StateSave();
+void SHMEM_StateLoad();
 
 #endif /* SHMEM_STATESAV_H_ */

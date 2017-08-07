@@ -447,6 +447,8 @@ class EmulatorFrame(wx.Frame):
     def restart(self):
         self.emulator_panel.on_start()
         self.pause_item.SetItemLabel("Pause")
+        if self.frame_cursor >= 0:
+            self.emulator.restore_history(self.frame_cursor)
         self.frame_cursor = -1
         self.SetStatusText("")
 

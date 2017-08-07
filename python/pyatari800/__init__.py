@@ -194,13 +194,25 @@ class Atari800(object):
         # a history entry by setting it to NONE.
         if self.frame_count % 10 == 0:
             d = self.exchange_array.copy()
-            print "history at %d: %d %s" % (self.frame_count, len(d), d[self.state_offset])
+            print "history at %d: %d %d %s %s" % (self.frame_count, len(d), self.state_offset, self.state[0:8], d[self.state_offset:self.state_offset+8])
         else:
             d = None
         self.history.append(d)
 
-    def restore_history(self):
-        pass
+    def restore_history(self, frame_number):
+        if frame_number < 0:
+            return
+        d = self.history[frame_number]
+        # Load the desired history back into the exchange buffer
+        #print "loading state", self.state_offset,self.state_end, d[self.state_offset:self.state_end][0:8]
+        self.state[:] = d[self.state_offset:self.state_end]
+        #print "transfer state", self.state[0:8]
+
+        # Set the semaphore to load the history
+        self.exchange_input[0].main_semaphore = 0xe0
+        self.wait_for_frame()
+
+        self.frame_count = frame_number
 
     def print_history(self, frame_number):
         d = self.history[frame_number]

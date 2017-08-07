@@ -125,6 +125,7 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 	/* main loop */
 	frame_count = 0;
 	for (;;) {
+loop:
 		for (;;) {
 			/* block until input ready */
 			if (input->main_semaphore == 0) {
@@ -132,6 +133,16 @@ int start_shmem(int argc, char **argv, unsigned char *raw, int len, callback_ptr
 				printf("Found 0; getting frame");
 #endif
 				break;
+			}
+
+			/* or loading a save state file */
+			else if (input->main_semaphore == 0xe0) {
+#ifdef DEBUG
+				printf("Found 0xe0; loading save state!\n");
+#endif
+				SHMEM_StateLoad();
+				input->main_semaphore = 1;
+				goto loop;
 			}
 
 			/* or asked to exit */
