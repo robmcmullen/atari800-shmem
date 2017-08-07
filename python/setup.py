@@ -77,14 +77,19 @@ cmdclass = dict()
 # Cython is only used when creating a source distribution. Users don't need
 # to install Cython unless they are modifying the .pyx files themselves.
 if "sdist" in sys.argv:
-    from distutils.command.sdist import sdist as _sdist
+    try:
+        from Cython.Build import cythonize
+        from distutils.command.sdist import sdist as _sdist
 
-    class sdist(_sdist):
-        def run(self):
-            from Cython.Build import cythonize
-            cythonize(["pyatari800/pyatari800.pyx"], gdb_debug=True)
-            _sdist.run(self)
-    cmdclass["sdist"] = sdist
+        class sdist(_sdist):
+            def run(self):
+                cythonize(["pyatari800/pyatari800.pyx"], gdb_debug=True)
+                _sdist.run(self)
+        cmdclass["sdist"] = sdist
+    except ImportError:
+        # assume the user doesn't have Cython and hope that the C file
+        # is included in the source distribution.
+        pass
 
 execfile('pyatari800/_metadata.py')
 
