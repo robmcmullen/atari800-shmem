@@ -87,7 +87,10 @@ class EmulatorControlBase(object):
         log.debug("key down! key=%s mod=%s" % (evt.GetKeyCode(), evt.GetModifiers()))
         key = evt.GetKeyCode()
         mod = evt.GetModifiers()
-        if mod == wx.MOD_ALT:
+        if mod == wx.MOD_ALT or self.is_paused:
+            self.frame.on_emulator_command_key(evt)
+            return
+        elif key == wx.WXK_F11:
             self.frame.on_emulator_command_key(evt)
             return
         elif mod == wx.MOD_CONTROL:
@@ -427,22 +430,21 @@ class EmulatorFrame(wx.Frame):
         key = evt.GetKeyCode()
         mod = evt.GetModifiers()
         print("emu key: %s %s" % (key, mod))
-        if mod == wx.MOD_ALT: # should already be alt when passed here
-            if key == wx.WXK_LEFT:
-                if not self.emulator_panel.is_paused:
-                    self.pause()
-                else:
-                    self.history_previous()
-            elif key == wx.WXK_RIGHT:
-                if not self.emulator_panel.is_paused:
-                    self.pause()
-                else:
-                    self.history_next()
-            elif key == wx.WXK_SPACE:
-                if self.emulator_panel.is_paused:
-                    self.restart()
-                else:
-                    self.pause()
+        if key == wx.WXK_LEFT:
+            if not self.emulator_panel.is_paused:
+                self.pause()
+            else:
+                self.history_previous()
+        elif key == wx.WXK_RIGHT:
+            if not self.emulator_panel.is_paused:
+                self.pause()
+            else:
+                self.history_next()
+        elif key == wx.WXK_SPACE or key == wx.WXK_F11:
+            if self.emulator_panel.is_paused:
+                self.restart()
+            else:
+                self.pause()
 
     def restart(self):
         self.emulator_panel.on_start()
