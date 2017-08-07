@@ -114,8 +114,6 @@ unsigned char *SHMEM_GetVideoArray(void) {
 }
 
 unsigned char *SHMEM_GetStateSaveArray(void) {
-    shared_memory[SHMEM_STATE_OFFSET] = 0xbe;
-    shared_memory[SHMEM_STATE_OFFSET+1] = 0xef;
     return &shared_memory[SHMEM_STATE_OFFSET];
 }
 
