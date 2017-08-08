@@ -11,7 +11,7 @@
 #define Screen_USABLE_WIDTH 336
 
 #define SHMEM_INPUT_OFFSET 0
-#define SHMEM_INPUT_SIZE 128
+#define SHMEM_INPUT_SIZE 2048
 #define SHMEM_VIDEO_OFFSET (SHMEM_INPUT_SIZE)
 #define SHMEM_VIDEO_SIZE (Screen_USABLE_WIDTH * Screen_HEIGHT)
 #define SHMEM_SOUND_OFFSET (SHMEM_VIDEO_OFFSET + SHMEM_VIDEO_SIZE)
@@ -44,6 +44,15 @@ typedef struct {
 	UBYTE mousey;
 	UBYTE mouse_buttons;
 	UBYTE mouse_mode;
+	UBYTE arg_byte_1;
+	UBYTE arg_byte_2;
+	UBYTE arg_byte_3;
+	UBYTE arg_byte_4;
+	UBYTE arg_byte_5;
+	UBYTE arg_byte_6;
+	UBYTE arg_byte_7;
+	UBYTE arg_byte_8;
+	char arg_string[256];
 } input_template_t;
 
 int SHMEM_Initialise(void);

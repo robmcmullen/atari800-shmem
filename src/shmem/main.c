@@ -38,6 +38,7 @@
 #endif
 #include "util.h"
 #include "videomode.h"
+#include "sio.h"
 #include "shmem/init.h"
 #include "shmem/input.h"
 #include "shmem/video.h"
@@ -135,6 +136,18 @@ loop:
 				break;
 			}
 
+#define DEBUG
+			/* or loading a disk image */
+			else if (input->main_semaphore == 0xd0) {
+#ifdef DEBUG
+				printf("Found 0xd0; loading D%d:%s!\n", input->arg_byte_1, input->arg_string);
+#endif
+				if (!SIO_Mount(input->arg_byte_1, input->arg_string, FALSE))
+					input->arg_byte_1 = 0;  /* set error */
+				input->main_semaphore = 1;
+				goto loop;
+			}
+#undef DEBUG
 			/* or loading a save state file */
 			else if (input->main_semaphore == 0xe0) {
 #ifdef DEBUG

@@ -103,11 +103,11 @@ class Atari800(object):
         self.width = 336
         self.height = 240
         self.state_size = 210000
-        self.raw_offset = 128
+        self.raw_offset = 2048
         self.raw = np.frombuffer(self.exchange, dtype=np.uint8, count=336*240, offset=self.raw_offset)
         print("raw offset=%d loc: %x" % (self.raw_offset, self.raw.__array_interface__['data'][0]))
         self.raw.shape = (240, 336)
-        self.audio_offset = 128 + (240*336)
+        self.audio_offset = self.raw_offset + (240*336)
         self.raw_end = self.audio_offset
         self.audio = np.frombuffer(self.exchange, dtype=np.uint8, count=2048, offset=self.audio_offset)
         print("audio offset=%d loc: %x" % (self.audio_offset, self.audio.__array_interface__['data'][0]))
@@ -187,6 +187,15 @@ class Atari800(object):
             else:
                 still_waiting.append((count, callback))
         self.frame_event = still_waiting
+
+    # Utility functions
+
+    def load_disk(self, drive_num, pathname):
+        # Set the semaphore to load the history
+        self.exchange_input[0].arg_byte_1 = 1  # disk drive number
+        self.exchange_input[0].arg_string = pathname
+        self.exchange_input[0].main_semaphore = 0xd0  # load disk image
+        self.wait_for_frame()
 
     def save_history(self):
         # History is saved in a big list, which will waste space for empty

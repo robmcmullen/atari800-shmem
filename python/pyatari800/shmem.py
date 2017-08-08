@@ -24,4 +24,13 @@ INPUT_DTYPE = np.dtype([
     ("mousey", np.uint8),
     ("mouse_buttons", np.uint8),
     ("mouse_mode", np.uint8),
+    ("arg_byte_1", np.uint8),
+    ("arg_byte_2", np.uint8),
+    ("arg_byte_3", np.uint8),
+    ("arg_byte_4", np.uint8),
+    ("arg_byte_5", np.uint8),
+    ("arg_byte_6", np.uint8),
+    ("arg_byte_7", np.uint8),
+    ("arg_byte_8", np.uint8),
+    ("arg_string", "S256"),
 ])

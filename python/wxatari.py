@@ -315,6 +315,10 @@ class EmulatorFrame(wx.Frame):
 
         menuBar = wx.MenuBar()
         menu = wx.Menu()
+        self.id_load = wx.NewId()
+        item = menu.Append(self.id_load, "Load Image", "Load a disk image")
+        self.Bind(wx.EVT_MENU, self.on_menu, item)
+        menu.AppendSeparator()
         item = menu.Append(wx.ID_EXIT, "E&xit\tCtrl-Q", "Exit demo")
         self.Bind(wx.EVT_MENU, self.on_menu, item)
         menuBar.Append(menu, "&File")
@@ -404,6 +408,17 @@ class EmulatorFrame(wx.Frame):
         if id == wx.ID_EXIT:
             self.emulator_panel.end_emulation()
             self.Close(True)
+        elif id == self.id_load:
+            dlg = wx.FileDialog(self, "Choose a disk image", defaultDir = "", defaultFile = "", wildcard = "*.atr")
+            if dlg.ShowModal() == wx.ID_OK:
+                print("Opening %s" % dlg.GetPath())
+                filename = dlg.GetPath()
+            else:
+                filename = None
+            dlg.Destroy()
+            if filename:
+                self.emulator.load_disk(1, filename)
+                self.emulator.send_special_key(AKEY_COLDSTART)
         elif id == self.id_coldstart:
             self.emulator.send_special_key(AKEY_COLDSTART)
         elif id == self.id_warmstart:
