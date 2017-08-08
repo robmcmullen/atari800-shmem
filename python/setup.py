@@ -29,7 +29,6 @@ extensions = [
     "src/cpu.c",
     "src/crc32.c",
     "src/devices.c",
-    "src/emuos.c",
     "src/emuos_altirra.c",
     "src/esc.c",
     "src/gtia.c",
