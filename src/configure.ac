@@ -712,6 +712,19 @@ A8_OPTION(bufferedlog,no,
           BUFFERED_LOG,[Define to use buffered debug output.]
          )
 
+A8_OPTION(altirra_rom,yes,
+      [Use Altirra OS in place of bootstrap OS to allow operation when real ROMs are not available (default=ON)],
+      EMUOS_ALTIRRA,[Define to use Altirra emulated OS instead of bootstrap OS when real ROMs are not available.]
+     )
+
+if [[ "$WANT_EMUOS_ALTIRRA" = "yes" ]]; then
+    OBJS="$OBJS emuos_altirra.o"
+    echo "WTF altirra"
+else
+    OBJS="$OBJS emuos.o"
+    echo "WTF bootstrap"
+fi
+
 A8_OPTION(monitorasm,yes,
           [Provide an assembler in the monitor (default=ON)],
           MONITOR_ASSEMBLER,[Define to activate assembler in monitor.]
@@ -1176,6 +1189,7 @@ if [[ "$a8_target" != "default" -o "$with_video" != no ]]; then
 fi
 echo "Using the paged attribute array?......: $WANT_PAGED_ATTRIB"
 echo "Using the buffered log?...............: $WANT_BUFFERED_LOG"
+echo "Using Altirra emulated OS.............: $WANT_EMUOS_ALTIRRA"
 echo "Using the monitor assembler?..........: $WANT_MONITOR_ASSEMBLER"
 echo "Using code breakpoints and history?...: $WANT_MONITOR_BREAK"
 echo "Using user-defined breakpoints?.......: $WANT_MONITOR_BREAKPOINTS"
